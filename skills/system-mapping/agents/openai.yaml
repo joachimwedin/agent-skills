@@ -1,0 +1,3 @@
+interface:
+  display_name: "System Mapping"
+  short_description: "Model how a sandbox's repos relate"
