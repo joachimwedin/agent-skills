@@ -1,6 +1,6 @@
 ---
 name: to-spec
-description: Turn the current conversation into a spec and publish it to ~/issues/<project>/ — no interview, just synthesis of what you've already discussed.
+description: Turn the current conversation into a spec and publish it to the agent-tickets tracker — no interview, just synthesis of what you've already discussed.
 disable-model-invocation: true
 ---
 
@@ -14,7 +14,7 @@ This skill takes the current conversation context and codebase understanding and
 
 Check with the user that these seams match their expectations.
 
-3. Write the spec using the template below, then publish it as `~/issues/<project>/todo/<n>-spec-<slug>.md`, where `<project>` is this repo's own slug under `~/issues/` (match whatever's already there) and `<n>` continues this project's existing shared issue sequence — check `~/issues/<project>/` across all four kanban folders for the highest number in use, or start at 1 if none exist yet.
+3. Write the spec using the template below, then publish it as a Spec per [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md).
 
 <spec-template>
 

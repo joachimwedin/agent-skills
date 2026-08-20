@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to ~/issues/<project>/.
+description: Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the agent-tickets tracker.
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ Break a plan, spec, or conversation into a set of **tickets** — tracer-bullet 
 
 ### 1. Gather context
 
-Work from whatever is already in the conversation context. If the user passes a reference (a spec path, an issue number or URL) as an argument, fetch it and read its full body and comments.
+Work from whatever is already in the conversation context. If the user passes a reference (a spec path or a ticket number) as an argument, fetch it and read its full body.
 
 ### 2. Explore the codebase (optional)
 
@@ -57,43 +57,17 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the tickets
 
-Publish one file per ticket under `~/issues/<project>/todo/<n>-<slug>.md`, where `<project>` is this repo's own slug under `~/issues/` (match whatever's already there). Number tickets by continuing this project's existing shared issue sequence — check `~/issues/<project>/` across all four kanban folders for the highest number in use, or start at 1 if none exist yet — in dependency order (blockers first), using the template below.
+Publish one file per ticket per [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md), in dependency order (blockers first). Fill it in as:
+
+- **`## Parent`**: `Spec #<parent-n>` if the source was an existing spec ticket, otherwise omit the section.
+- **`## What to build`**: the end-to-end behaviour this ticket makes work, from the user's perspective — not layer-by-layer implementation.
+- **`## Acceptance criteria`**: a checklist of concrete criteria.
+- **`## Blocked by`**: `Ticket #<n> (<why>)`, or "None — can start immediately".
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
-Do NOT close or modify any parent issue.
+Parent tickets are read-only here — this skill only creates child tickets.
 
-<ticket-template>
-
-# <n> — <Ticket title>
-
-## Parent
-
-Spec #<parent-n> (if the source was an existing spec issue, otherwise omit this section)
-
-## What to build
-
-The end-to-end behaviour this ticket makes work, from the user's perspective — not layer-by-layer implementation.
-
-## Acceptance criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-## Blocked by
-
-- Issue #<n> (<why>), or "None — can start immediately"
-
-</ticket-template>
-
-A ticket that only a human can carry out (see step 3's dependency-change case) carries a `## Flagged` section from the start instead of being left pickable:
-
-<flagged-ticket-example>
-
-## Flagged
-
-Needs `<package>@<version>` added as a dependency, for `<why>`. `npm` can't be run by a coding pass — a human needs to install it.
-
-</flagged-ticket-example>
+A ticket that only a human can carry out (see step 3's dependency-change case) carries a `## Flagged` section from the start instead of being left pickable — see [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md)'s Flagged tickets section for the shape; state which package(s)/version(s) and why.
 
 In either section, avoid specific file paths or code snippets — they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts — not a working demo, just the important bits.

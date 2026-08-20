@@ -1,0 +1,5 @@
+interface:
+  display_name: "Agent Tickets Setup"
+  short_description: "Bootstrap the local agent-tickets repo"
+policy:
+  allow_implicit_invocation: false

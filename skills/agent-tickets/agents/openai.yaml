@@ -1,0 +1,3 @@
+interface:
+  display_name: "Agent Tickets"
+  short_description: "The agent-tickets ticket-tracker format"

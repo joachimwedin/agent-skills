@@ -14,9 +14,7 @@ Print the summary above to the user, adapted into a short greeting, before askin
 
 ## 2. Gather inputs
 
-Ask where the user's repos live (default guess: `~/repos`) — call this the **repos root**.
-
-List every folder under the repos root that contains a `.git` directory as a numbered list, and ask the user which to include as **member repos** — by number or by name, whichever they prefer. Ask this as plain chat text: the list, then a free-text question. Do not use `AskUserQuestion` or any fixed-option tool here — the answer is an arbitrary subset of an arbitrary-length list, which doesn't fit a small set of mutually-exclusive options.
+List every folder under `~/repos` that contains a `.git` directory as a numbered list, and ask the user which to include as **member repos** — by number or by name, whichever they prefer. Ask this as plain chat text: the list, then a free-text question. Do not use `AskUserQuestion` or any fixed-option tool here — the answer is an arbitrary subset of an arbitrary-length list, which doesn't fit a small set of mutually-exclusive options.
 
 ## 3. Analyze member repos
 
@@ -26,7 +24,7 @@ Hold these findings — nothing gets written yet; the context repo doesn't exist
 
 ## 4. Flag undiscovered dependencies
 
-Collect the dependencies the analysis named that resolve to a git-repo folder under the repos root but weren't selected as a member. Dedupe across repos.
+Collect the dependencies the analysis named that resolve to a git-repo folder under `~/repos` but weren't selected as a member. Dedupe across repos.
 
 If any remain, list them and ask the user which to add, same as step 2.
 
@@ -42,7 +40,7 @@ Once the full name is chosen, suggest at least 3 candidates for a short **alias*
 
 ## 6. Create the context repo
 
-`git init` at `<repos-root>/<sandbox-name>`, then commit a `CLAUDE.md` with one context pointer per member repo — the initial selection plus anything added in step 4 (format in [system-mapping's REPO-FORMAT.md](../system-mapping/REPO-FORMAT.md)) — and write each of those repos' `.md` file from its held findings, in system-mapping's format.
+`git init` at `~/repos/<sandbox-name>`, then commit a `CLAUDE.md` with one context pointer per member repo — the initial selection plus anything added in step 4 (format in [system-mapping's REPO-FORMAT.md](../system-mapping/REPO-FORMAT.md)) — and write each of those repos' `.md` file from its held findings, in system-mapping's format.
 
 Also commit `pointer.md` at the context repo's root — a one-line stub, not a copy of `CLAUDE.md`:
 
@@ -62,7 +60,7 @@ Write a bash function to `sandbox-launch.sh` inside the context repo, named afte
 <alias>() {
   local name="<sandbox-name>"
   local paths=(
-    "<repos-root>/<sandbox-name>"
+    "$HOME/repos/<sandbox-name>"
     <repo-1-path>
     <repo-2-path>
   )
@@ -73,7 +71,7 @@ Write a bash function to `sandbox-launch.sh` inside the context repo, named afte
     sbx create --name "$name" claude "${paths[@]}"
     sbx cp ~/.claude/settings.json "$name":/home/agent/.claude/settings.json
     sbx cp ~/.claude/statusline-command.sh "$name":/home/agent/.claude/statusline-command.sh
-    sbx cp "<repos-root>/<sandbox-name>/pointer.md" "$name":$HOME/repos/CLAUDE.md
+    sbx cp "$HOME/repos/<sandbox-name>/pointer.md" "$name":$HOME/repos/CLAUDE.md
   fi
 
   sbx run --name "$name"
@@ -84,4 +82,4 @@ Write a bash function to `sandbox-launch.sh` inside the context repo, named afte
 
 ## 8. Hand off
 
-Print the one line the user adds to their own shell rc to make the function available — `source <repos-root>/<sandbox-name>/sandbox-launch.sh` — and that running `<alias>` afterward launches the sandbox. Do not edit the user's shell configuration.
+Print the one line the user adds to their own shell rc to make the function available — `source ~/repos/<sandbox-name>/sandbox-launch.sh` — and that running `<alias>` afterward launches the sandbox. Do not edit the user's shell configuration.
