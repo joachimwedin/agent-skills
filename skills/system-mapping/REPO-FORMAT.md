@@ -2,10 +2,12 @@
 
 ## CLAUDE.md (context pointers)
 
-Lives in the context repo. Keep it to pointers only. Never inline a repo's purpose or dependencies here; that belongs in its own file - every member repo's detail lives at `{repo}.md`, right here in this same directory, so the index only needs to name each repo, not link to it.
+Lives in the context repo. Keep it to pointers only. Never inline a repo's purpose or dependencies here; that belongs in its own file under `repos/`. State the convention once, near the top, so the index below only needs to name each repo, not link to it — a link would go dead the moment a repo is listed before its file exists, since files are created lazily.
 
 ```md
 # {group-name}
+
+Every member repo's detail lives at `./repos/{repo}.md`.
 
 - **Domain glossary**: [CONTEXT.md](./CONTEXT.md) (only once it exists)
 - **Architecture decisions**: [docs/adr/](./docs/adr) (only once the first ADR exists)
@@ -27,9 +29,9 @@ Group entries under headings when natural clusters emerge - mirroring how `CONTE
 
 What clusters repos varies by what the group actually is - a services architecture might split by role (frontends, APIs, infrastructure); a library ecosystem might split by package type or consumer; a tool suite might split by what team owns each. Derive headings from what actually clusters **this** group of repos.
 
-## {repo}.md
+## repos/{repo}.md
 
-One file per member repo, named after the repo.
+One file per member repo, named after the repo, in the `repos/` subdirectory.
 
 ```md
 # {repo}
@@ -45,6 +47,6 @@ A repo with no dependencies on its siblings omits the `## Depends on` section en
 
 ## Rules
 
-- **Create lazily.** Don't scaffold every repo's `.md` up front — write one the first time that repo's purpose or a dependency on it is actually discussed.
+- **Create lazily.** Don't scaffold every repo's `repos/{repo}.md` up front — write one the first time that repo's purpose or a dependency on it is actually discussed.
 - **Purpose stays short.** One or two sentences.
 - **Dependencies name the direction and the why**, not just "depends on X." "shop-web depends on shop-api for its REST client" beats "shop-web uses shop-api."

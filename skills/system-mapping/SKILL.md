@@ -16,15 +16,16 @@ Lives in a dedicated context repo, a sibling of the repos it describes. For exam
 ├── shop-api/
 ├── shop-web/
 └── shop-context/
-    ├── CLAUDE.md    ← context pointers
-    ├── shop-api.md  ← shop-api's purpose, what depends on it and why
-    ├── shop-web.md  ← shop-web's purpose, what it depends on and why
-    └── docs/adr/    ← decisions that span repos (created on first ADR)
+    ├── CLAUDE.md        ← context pointers
+    ├── repos/
+    │   ├── shop-api.md  ← shop-api's purpose, what depends on it and why
+    │   └── shop-web.md  ← shop-web's purpose, what it depends on and why
+    └── docs/adr/        ← decisions that span repos (created on first ADR)
 ```
 
 Use the format in [REPO-FORMAT.md](./REPO-FORMAT.md).
 
-Create files lazily — only when you have something to write. Adding a repo to the group means adding its pointer line to `CLAUDE.md`; its own `.md` file waits until there's a purpose or dependency to record.
+Create files lazily — only when you have something to write. Adding a repo to the group means adding its name to `CLAUDE.md`; its own `repos/{repo}.md` file waits until there's a purpose or dependency to record.
 
 ## Cross-repo architecture decisions
 
