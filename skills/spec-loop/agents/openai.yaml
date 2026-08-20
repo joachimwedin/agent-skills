@@ -1,0 +1,5 @@
+interface:
+  display_name: "Spec Loop"
+  short_description: "Drive a Spec's board to completion via spec-pass"
+policy:
+  allow_implicit_invocation: false

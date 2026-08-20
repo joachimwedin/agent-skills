@@ -101,6 +101,38 @@ number is shared across Specs and child tickets, so it uniquely
 identifies one file somewhere under `~/repos/agent-tickets/<project>/todo/`,
 `in-progress/`, `review/`, or `done/`.
 
+## Spec board operations
+
+Used by `spec-pass`, `spec-loop`, and `spec-review`, for an ordinary Spec (no
+`Type: wayfinder-map` line) whose children are build tickets — the
+shape `to-spec`/`to-tickets` produce.
+
+- **Pickable**: a child ticket in `todo/` with no `## Flagged` section
+  and every `## Blocked by` reference already in `done/`.
+- **Priority scan**: the single next action for a Spec's board, checked
+  in this order —
+  1. Something already in `review/` — the Spec itself, or a child —
+     outranks everything else.
+  2. The Spec is `in-progress/` and every child is `done/`: the Spec
+     itself is ready for review.
+  3. A pickable child sits in `todo/`.
+  4. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
+     (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
+     remaining child is `## Flagged` or has an unresolved
+     `## Blocked by`).
+- **Claim**: move a child ticket to `in-progress/` before any work. At
+  most one child in-progress at a time.
+- **Child review**: decide the child's fate against its own
+  `## Acceptance criteria` — fix what's missing or approve outright,
+  tick any boxes that now reflect reality, then move it to `done/`. A
+  child's review always ends at `done/`, never back for more coding.
+- **Spec review**: when the item sitting in `review/` is the Spec
+  itself, that's `spec-review`'s job, not an ordinary child review.
+- **Project commits**: when coding or reviewing changes the *project's*
+  own repo (not `agent-tickets`), describe the code decisions only —
+  the ticket number and filename are local, ephemeral tracker artifacts
+  with no place in the project's own history.
+
 ## Wayfinding operations
 
 Used by `wayfinder`. The **map** is a Spec; its **children** are

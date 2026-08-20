@@ -1,0 +1,3 @@
+interface:
+  display_name: "Spec Pass"
+  short_description: "Work a Spec's board one action at a time"

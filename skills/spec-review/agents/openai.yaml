@@ -1,0 +1,3 @@
+interface:
+  display_name: "Spec Review"
+  short_description: "Strict whole-branch review that closes out a Spec"

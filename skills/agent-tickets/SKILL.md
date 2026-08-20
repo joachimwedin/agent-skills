@@ -1,6 +1,6 @@
 ---
 name: agent-tickets
-description: Conventions for the agent-tickets tracker — kanban folders, ticket template, commit-per-transition, wayfinding shapes. Use when publishing, moving, resolving, or reading a ticket, or when another skill needs the tracker's format.
+description: Conventions for the agent-tickets tracker — kanban folders, ticket template, commit-per-transition, Spec board and wayfinding shapes. Use when publishing, moving, resolving, or reading a ticket, or when another skill needs the tracker's format.
 ---
 
 # Agent Tickets
