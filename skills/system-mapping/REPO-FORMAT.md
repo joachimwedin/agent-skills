@@ -2,16 +2,30 @@
 
 ## CLAUDE.md (context pointers)
 
-Lives in the context repo. Keep it to pointers only — one line per repo. Never inline a repo's purpose or dependencies here; that belongs in its own file.
+Lives in the context repo. Keep it to pointers only. Never inline a repo's purpose or dependencies here; that belongs in its own file - every member repo's detail lives at `{repo}.md`, right here in this same directory, so the index only needs to name each repo, not link to it.
 
 ```md
 # {group-name}
 
-Related repos: {repo-1}, {repo-2}.
+- **Domain glossary**: [CONTEXT.md](./CONTEXT.md) (only once it exists)
+- **Architecture decisions**: [docs/adr/](./docs/adr) (only once the first ADR exists)
 
-- Need {repo-1}'s purpose or what depends on it? See [{repo-1}.md](./{repo-1}.md).
-- Need {repo-2}'s purpose or what it depends on? See [{repo-2}.md](./{repo-2}.md).
+## System shape
+
+{A handful of durable, always true facts about the group as a whole - not a repo's own detail. Keep this very short: a few one-line facts, not paragraphs. Omit the section entirely if there's nothing that clears the bar of "true of the whole system, not just one repo."}
+
+## {First group heading}
+
+{repo-1}, {repo-2}
+
+## {Second group heading}
+
+{repo-3}, {repo-4}
 ```
+
+Group entries under headings when natural clusters emerge - mirroring how `CONTEXT.md` groups terms under subheadings. If all repos belong to one cohesive group, or there are only a couple, a flat comma-separated list under the index needs no headings at all. 
+
+What clusters repos varies by what the group actually is - a services architecture might split by role (frontends, APIs, infrastructure); a library ecosystem might split by package type or consumer; a tool suite might split by what team owns each. Derive headings from what actually clusters **this** group of repos.
 
 ## {repo}.md
 

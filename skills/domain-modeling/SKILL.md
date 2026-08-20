@@ -45,6 +45,8 @@ Create files lazily: only when you have something to write. If no `CONTEXT.md` e
 
 When the user uses a term that conflicts with the existing language in `CONTEXT.md`, call it out immediately. "Your glossary defines 'cancellation' as X, but you seem to mean Y. Which is it?"
 
+If `CONTEXT.md` (or `CONTEXT-MAP.md`) has a `## Shared glossary` link, check the linked file too before concluding a term is undefined. When a term being resolved clearly isn't specific to this repo - other repos independently reference the same concept - prefer proposing it for the shared glossary over duplicating it locally. Never check for a shared glossary except via that explicit link; don't guess based on what directories happen to exist alongside the repo.
+
 ### Sharpen fuzzy language
 
 When the user uses vague or overloaded terms, propose a precise canonical term. "You're saying 'account': do you mean the Customer or the User? Those are different things."

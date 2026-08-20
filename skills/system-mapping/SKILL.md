@@ -17,13 +17,20 @@ Lives in a dedicated context repo, a sibling of the repos it describes. For exam
 ├── shop-web/
 └── shop-context/
     ├── CLAUDE.md    ← context pointers
-    ├── shop-api.md   ← shop-api's purpose, what depends on it and why
-    └── shop-web.md   ← shop-web's purpose, what it depends on and why
+    ├── shop-api.md  ← shop-api's purpose, what depends on it and why
+    ├── shop-web.md  ← shop-web's purpose, what it depends on and why
+    └── docs/adr/    ← decisions that span repos (created on first ADR)
 ```
 
 Use the format in [REPO-FORMAT.md](./REPO-FORMAT.md).
 
 Create files lazily — only when you have something to write. Adding a repo to the group means adding its pointer line to `CLAUDE.md`; its own `.md` file waits until there's a purpose or dependency to record.
+
+## Cross-repo architecture decisions
+
+A decision that spans multiple member repos - not owned by any single repo's own ADR log - gets recorded in the context repo's own `docs/adr/`, using the same format domain modeling uses for a single repo: [ADR-FORMAT.md](../domain-modeling/ADR-FORMAT.md). Create the directory lazily, on first entry.
+
+Offer one only when it's genuinely cross-repo (which of two repos owns a shared resource until a split finishes, an integration pattern between two services) and meets the usual bar from ADR-FORMAT.md: hard to reverse, surprising without context, the result of a real trade-off. A decision internal to one repo belongs in that repo's own `docs/adr/` instead, via domain-modeling.
 
 ## During the session
 
