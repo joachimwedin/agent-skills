@@ -64,8 +64,6 @@ Print a bash function named after the alias from step 5 — don't write it to a 
 
 Context for these repos lives in [<sandbox-name>/CLAUDE.md](./<sandbox-name>/CLAUDE.md) — see it for the full repo list.'
 
-  sbx skills import --force
-
   if ! sbx ls -q | grep -qx "$name"; then
     sbx create --name "$name" claude "${paths[@]}"
     sbx cp ~/.claude/settings.json "$name":/home/agent/.claude/settings.json
@@ -78,11 +76,15 @@ Context for these repos lives in [<sandbox-name>/CLAUDE.md](./<sandbox-name>/CLA
     rm -f "$stub"
   fi
 
+  # Copy skills straight from ~/.claude/skills, dereferencing symlinks.
+  local skill
+  for skill in "$HOME/.claude/skills"/*; do
+    sbx cp -L "$skill" "$name":/home/agent/.claude/skills/
+  done
+
   sbx run --name "$name"
 }
 ```
-
-`sbx skills import` runs on the host, not inside a named sandbox — it syncs `~/.claude/skills` (following top-level symlinks) into the persistent store every sandbox shares. It runs on every launch, not just first creation, so skill edits are picked up next time you attach.
 
 ## 8. Hand off
 
