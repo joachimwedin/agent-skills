@@ -42,19 +42,11 @@ Once the full name is chosen, suggest at least 3 candidates for a short **alias*
 
 `git init` at `~/repos/<sandbox-name>`, then commit a `CLAUDE.md` with one context pointer per member repo — the initial selection plus anything added in step 4 (format in [system-mapping's REPO-FORMAT.md](../system-mapping/REPO-FORMAT.md)) — and write each of those repos' `.md` file from its held findings, in system-mapping's format.
 
-Also commit `pointer.md` at the context repo's root — a one-line stub, not a copy of `CLAUDE.md`:
+Don't commit anything else here — the outer-pointer stub used in step 7 is generated at print-time, not stored in the repo. `CLAUDE.md`'s own repo-pointer links (`./repos/{repo}.md`) only resolve correctly when read from inside the context repo itself — copying `CLAUDE.md` verbatim into the shared parent directory the sandbox opens in would break every one of those links, which is why the sandbox gets the small stub below instead.
 
-```md
-# <sandbox-name>
+## 7. Print the launch function
 
-Context for these repos lives in [<sandbox-name>/CLAUDE.md](./<sandbox-name>/CLAUDE.md) — see it for the full repo list.
-```
-
-This is what gets copied into the sandbox in step 7. `CLAUDE.md`'s own repo-pointer links (`./{repo}.md`) only resolve correctly when read from inside the context repo itself — copying `CLAUDE.md` verbatim into the shared parent directory the sandbox opens in would break every one of those links.
-
-## 7. Generate the launch function
-
-Write a bash function to `sandbox-launch.sh` inside the context repo, named after the alias from step 5. The `paths` array needs one entry per current member repo — the initial selection plus anything added in step 4 — not just the two shown here:
+Print a bash function named after the alias from step 5 — don't write it to a file. The `paths` array needs one entry per current member repo — the initial selection plus anything added in step 4 — not just the two shown here; the stub content is written via `printf` to a temp file so nothing needs to be committed or read back off disk:
 
 ```bash
 <alias>() {
@@ -65,13 +57,25 @@ Write a bash function to `sandbox-launch.sh` inside the context repo, named afte
     <repo-2-path>
   )
 
+  # Stub CLAUDE.md copied into the sandbox's shared parent directory — not
+  # the real CLAUDE.md, whose repo-pointer links only resolve from inside
+  # the context repo itself
+  local stub_claude_md='# <sandbox-name>
+
+Context for these repos lives in [<sandbox-name>/CLAUDE.md](./<sandbox-name>/CLAUDE.md) — see it for the full repo list.'
+
   sbx skills import --force
 
   if ! sbx ls -q | grep -qx "$name"; then
     sbx create --name "$name" claude "${paths[@]}"
     sbx cp ~/.claude/settings.json "$name":/home/agent/.claude/settings.json
     sbx cp ~/.claude/statusline-command.sh "$name":/home/agent/.claude/statusline-command.sh
-    sbx cp "$HOME/repos/<sandbox-name>/pointer.md" "$name":$HOME/repos/CLAUDE.md
+
+    local stub
+    stub=$(mktemp)
+    printf '%s\n' "$stub_claude_md" > "$stub"
+    sbx cp "$stub" "$name":$HOME/repos/CLAUDE.md
+    rm -f "$stub"
   fi
 
   sbx run --name "$name"
@@ -82,4 +86,4 @@ Write a bash function to `sandbox-launch.sh` inside the context repo, named afte
 
 ## 8. Hand off
 
-Print the one line the user adds to their own shell rc to make the function available — `source ~/repos/<sandbox-name>/sandbox-launch.sh` — and that running `<alias>` afterward launches the sandbox. Do not edit the user's shell configuration.
+Tell the user to add the printed function to their own shell rc file directly, and that running `<alias>` afterward launches the sandbox. Do not edit the user's shell configuration by yourself.

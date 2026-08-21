@@ -41,9 +41,15 @@ One file per member repo, named after the repo, in the `repos/` subdirectory.
 ## Depends on
 
 - **{other-repo}** — {what it consumes, and why}
+
+## Notes
+
+- {A durable fact about the repo that's neither a dependency nor glossary material.}
 ```
 
 A repo with no dependencies on its siblings omits the `## Depends on` section entirely — don't write "None."
+
+`## Notes` is optional — most repos won't need one. It holds durable, repo-specific facts that don't fit the other two sections: a config entry or client that looks live but isn't, state the repo owns but doesn't share, a feature that's flag-gated off. It is not a place for the *decision* behind a fact (that's an ADR, if it clears the ADR bar) or for *mutable* status (that belongs in the issue tracker — link to the ticket rather than restating its current state here, since this file will go stale the moment the ticket resolves.)
 
 ## Rules
 
