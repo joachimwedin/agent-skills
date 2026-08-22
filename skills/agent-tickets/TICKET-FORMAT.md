@@ -113,8 +113,11 @@ shape `to-spec`/`to-tickets` produce.
   in this order —
   1. Something already in `review/` — the Spec itself, or a child —
      outranks everything else.
-  2. The Spec is `in-progress/` and every child is `done/`: the Spec
-     itself is ready for review.
+  2. The Spec is still `todo/` or `in-progress/` and every child is
+     `done/`: the Spec itself is ready for review. (A fresh Spec never
+     passes through `in-progress/` before this point — its children do
+     all the claiming — so `todo/` counts here just as much as
+     `in-progress/` does.)
   3. A pickable child sits in `todo/`.
   4. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
      (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
