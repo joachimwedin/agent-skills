@@ -52,14 +52,14 @@ Render every snapshot the same way, narration line first:
 
 | # | Ticket | State |
 |---|--------|-------|
-| 1 | spec | ⬜ todo |
+| 1 | spec | 🔳 todo |
 | 2 | ... | ✅ done |
 ```
 
-- State column icons: ✅ done · 🔵 review · 🟡 in-progress · ⬜ todo ·
+- State column icons: ✅ done · 🟦 review · 🟨 in-progress · 🔳 todo ·
   🚫 flagged.
 - Append a note to the State cell when relevant — a blocked `todo/`
-  ticket gets "⬜ todo (needs #5)"; a flagged one gets "🚫 flagged".
+  ticket gets "🔳 todo (needs #5)"; a flagged one gets "🚫 flagged".
 - Bold all three cells of whichever row just changed folder.
 
 ## Loop
