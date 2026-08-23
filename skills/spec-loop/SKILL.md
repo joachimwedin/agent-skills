@@ -10,6 +10,29 @@ Invoked with a Spec (number or path). Loops `spec-pass` over that
 Spec's board, one subagent per action, until nothing's left it can
 progress.
 
+## No Spec given
+
+If invoked with no Spec, resolve one yourself before doing anything
+else — this resolution is a read, not a change, so it doesn't conflict
+with "The driving agent only drives" below:
+
+1. List every project subfolder under `~/repos/agent-tickets/`,
+   unfiltered — including ones with no open Specs. Always ask the user
+   to pick one; never auto-skip this step, even if only one project
+   happens to have an open Spec.
+2. Within the chosen project, list every Spec file
+   (`<n>-spec-<slug>.md`) not currently sitting in `done/`, excluding
+   any with a `Type: wayfinder-map` line — spec-loop has no defined
+   behavior for a wayfinder map.
+   - **Zero** matches — report "no open Specs in `<project>`" and end
+     the turn. Don't loop back to let the user pick a different
+     project; re-invoking `/spec-loop` is cheap.
+   - **Exactly one** — auto-select it, state which one and why, and
+     proceed.
+   - **More than one** — ask the user to pick.
+3. Treat the resolved Spec exactly as if it had been given as the
+   argument from the start, and continue below.
+
 ## The driving agent only drives
 
 You (the agent running this skill) never make any changes yourself —
