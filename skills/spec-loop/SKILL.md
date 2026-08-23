@@ -69,7 +69,7 @@ conflict with "The driving agent only drives" above:
 Render every snapshot the same way, narration line first:
 
 ```
-<narration line, e.g. Claimed and coded child #5 ("..."), moved it to review/.>
+<narration line, e.g. Claimed child #5 ("..."), moved it to in-progress/.>
 
 **Spec #<n> board — <slug>**
 
@@ -96,9 +96,10 @@ this conversation, so hand it the Spec's number or path directly, and
 have it report back exactly what happened.
 
 Narrate that outcome before spawning the next subagent — e.g. "claimed
-and coded #12", "resolved #9 in review", "moved the Spec to review/",
-"ran spec-review — reopened with 2 new child tickets" — then take a
-fresh board snapshot and print it, per "Board snapshot" above.
+#12", "coded #12, moved it to review/", "resolved #9 in review", "moved
+the Spec to review/", "ran spec-review — reopened with 2 new child
+tickets" — then take a fresh board snapshot and print it, per "Board
+snapshot" above.
 
 Anything except `done` or `blocked` is forward progress — including
 moving the Spec to `review/` and running `spec-review`, whether that

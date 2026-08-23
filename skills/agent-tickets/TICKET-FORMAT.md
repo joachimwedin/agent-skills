@@ -119,16 +119,22 @@ shape `to-spec`/`to-tickets` produce.
      into `done/` without ever being claimed. Through normal `spec-pass`
      operation the Spec is always `in-progress/` by this point, since
      claiming a child now always moves the Spec there first.)
-  3. A pickable child sits in `todo/`.
-  4. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
+  3. A child already sits in `in-progress/` — it's been claimed but not
+     yet carried to a terminal state: work it.
+  4. A pickable child sits in `todo/`: claim it.
+  5. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
      (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
      remaining child is `## Flagged` or has an unresolved
      `## Blocked by`).
-- **Claim**: move a child ticket to `in-progress/` before any work. At
+- **Claim**: move a child ticket to `in-progress/`, commit, and stop —
+  claiming is its own action, separate from the work that follows. At
   most one child in-progress at a time. The first child claimed on a
   Spec's board also moves the Spec itself from `todo/` to `in-progress/`,
   one-way and never repeated after — the board then shows work is
   underway even before any child reaches `review/`.
+- **Work**: carry a child already sitting in `in-progress/` to a
+  terminal state — `review/` once done, or back to `todo/` with a
+  `## Flagged` section if it can't be finished.
 - **Child review**: decide the child's fate against its own
   `## Acceptance criteria` — fix what's missing or approve outright,
   tick any boxes that now reflect reality, then move it to `done/`. A

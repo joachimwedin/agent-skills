@@ -1,6 +1,6 @@
 ---
 name: spec-pass
-description: Progresses a Spec's board on agent-tickets one action at a time — claims and codes the next pickable child, resolves a child sitting in review, moves the Spec to review once its children are done, or runs spec-review once it's already sitting there. Use when spec-loop spawns a subagent to drive a Spec forward, or to work one step of a Spec's board directly.
+description: Progresses a Spec's board on agent-tickets one action at a time — claims the next pickable child, codes a child already claimed, resolves a child sitting in review, moves the Spec to review once its children are done, or runs spec-review once it's already sitting there. Use when spec-loop spawns a subagent to drive a Spec forward, or to work one step of a Spec's board directly.
 ---
 
 # Spec Pass
@@ -28,7 +28,7 @@ it sitting there and run `spec-review`.
 
 ## When the action is a pickable child in `todo/`
 
-If more than one is pickable, work the highest-priority one:
+If more than one is pickable, claim the highest-priority one:
 
 1. Critical bugfixes
 2. Development infrastructure — tests, types, dev scripts: an important
@@ -45,8 +45,15 @@ Skip this if the Spec is already `in-progress/` (e.g. a later child claim
 on the same board); it's a one-way move that never reverts, even if this
 child later gets flagged back to `todo/`.
 
-Then claim the child (move to `in-progress/`, commit), and carry it all
-the way to a terminal state in this same pass:
+Then claim the child (move to `in-progress/`, commit), and stop — this
+pass is done. A later pass will find it sitting in `in-progress/` and
+carry it forward, per "Spec board operations". This split is what lets
+`spec-loop`'s board snapshot actually catch a child mid-flight, instead
+of jumping straight from `todo/` to `review/`.
+
+## When the action is a child sitting in `in-progress/`
+
+Carry it all the way to a terminal state in this same pass:
 
 1. **Explore**: use the Explore agent to locate the relevant code —
    specific file paths and line numbers, not full contents, including
