@@ -114,17 +114,21 @@ shape `to-spec`/`to-tickets` produce.
   1. Something already in `review/` — the Spec itself, or a child —
      outranks everything else.
   2. The Spec is still `todo/` or `in-progress/` and every child is
-     `done/`: the Spec itself is ready for review. (A fresh Spec never
-     passes through `in-progress/` before this point — its children do
-     all the claiming — so `todo/` counts here just as much as
-     `in-progress/` does.)
+     `done/`: the Spec itself is ready for review. (The `todo/` case only
+     fires on a manually-edited board — e.g. a child dropped straight
+     into `done/` without ever being claimed. Through normal `spec-pass`
+     operation the Spec is always `in-progress/` by this point, since
+     claiming a child now always moves the Spec there first.)
   3. A pickable child sits in `todo/`.
   4. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
      (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
      remaining child is `## Flagged` or has an unresolved
      `## Blocked by`).
 - **Claim**: move a child ticket to `in-progress/` before any work. At
-  most one child in-progress at a time.
+  most one child in-progress at a time. The first child claimed on a
+  Spec's board also moves the Spec itself from `todo/` to `in-progress/`,
+  one-way and never repeated after — the board then shows work is
+  underway even before any child reaches `review/`.
 - **Child review**: decide the child's fate against its own
   `## Acceptance criteria` — fix what's missing or approve outright,
   tick any boxes that now reflect reality, then move it to `done/`. A

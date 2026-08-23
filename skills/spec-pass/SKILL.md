@@ -38,8 +38,15 @@ If more than one is pickable, work the highest-priority one:
 4. Polish and quick wins
 5. Refactors
 
-Claim it (move to `in-progress/`, commit), then carry it all the way to
-a terminal state in this same pass:
+If the Spec itself is still sitting in `todo/`, move it to `in-progress/`
+first and commit as `<n>: start — <spec-slug>` — a distinct verb from
+`claim`, since it's the child being picked up to work on, not the Spec.
+Skip this if the Spec is already `in-progress/` (e.g. a later child claim
+on the same board); it's a one-way move that never reverts, even if this
+child later gets flagged back to `todo/`.
+
+Then claim the child (move to `in-progress/`, commit), and carry it all
+the way to a terminal state in this same pass:
 
 1. **Explore**: use the Explore agent to locate the relevant code —
    specific file paths and line numbers, not full contents, including
