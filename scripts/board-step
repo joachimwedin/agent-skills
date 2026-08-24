@@ -11,9 +11,16 @@
 # conventions -- printing JSON: the outcome (what it decided or did)
 # together with the board's current state, always read fresh off disk.
 #
+# `report` is the other entry point: given a ticket number and a fate
+# spec-pass/spec-review already decided (ready-for-review, flagged, or
+# done -- see TICKET-FORMAT.md's "Report fate"), performs that ticket's
+# move and commit itself, using the same conventions.
+#
 # Usage:
 #   board-step <spec-number> <board-dir>
 #   board-step <path-to-spec-ticket-file>
+#   board-step report <ticket-number> <board-dir> --fate <fate> [--reason "<why>"]
+#   board-step report <path-to-ticket-file> --fate <fate> [--reason "<why>"]
 
 set -euo pipefail
 

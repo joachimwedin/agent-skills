@@ -1,9 +1,12 @@
-import { commit, moveFile } from "git-ts/src/gitClient.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import { addFile, commit, moveFile } from "git-ts/src/gitClient.js";
 
 import type { BoardState } from "../boardState/main.js";
 import { buildBoardState } from "../boardState/main.js";
-import type { Folder } from "../board/boardSnapshot.js";
-import { readBoardSnapshot } from "../board/boardSnapshot.js";
+import type { Folder, TicketRecord } from "../board/boardSnapshot.js";
+import { findTicket, readBoardSnapshot, specNumberFor } from "../board/boardSnapshot.js";
 import { classifyNextAction } from "../board/classify.js";
 
 /**
@@ -137,4 +140,118 @@ function decideAndAct(boardDir: string, specNumber: number): Outcome {
 export function runBoardStep(boardDir: string, specNumber: number): StepResult {
   const outcome = decideAndAct(boardDir, specNumber);
   return { outcome, board: buildBoardState(boardDir, specNumber) };
+}
+
+/**
+ * A fate `spec-pass` or `spec-review` already decided for one ticket,
+ * reported back to whoever invoked it rather than enacted directly (see
+ * TICKET-FORMAT.md's "Spec board operations", "Report fate"). `board-step
+ * report` (`runReportFate` below) is the sole executor of any of these
+ * three -- mirroring how `execute-claim`/`execute-spec-ready` above are the
+ * sole mechanical actions the Priority scan can trigger on its own.
+ *
+ * - `ready-for-review`: a child `spec-pass` (`work` mode) finished --
+ *   in-progress/ -> review/. Never valid for the Spec itself; a Spec's own
+ *   review-readiness is already fully mechanical (`execute-spec-ready`
+ *   above), never reported.
+ * - `flagged`: more work remains before this ticket can close out. For a
+ *   child (`spec-pass`, `work` mode, blocked) that's in-progress/ -> todo/
+ *   plus an appended "## Flagged" section explaining why -- `reason` is
+ *   required and becomes that section's body. For the Spec itself
+ *   (`spec-review`, having filed new child tickets rather than fixing
+ *   everything in place) that's review/ -> in-progress/ instead -- no
+ *   "## Flagged" section is appended (Specs don't carry one; the new child
+ *   tickets already represent the outstanding work), so `reason` is
+ *   accepted but ignored.
+ * - `done`: review/ -> done/. Used by a child (`spec-pass`,
+ *   `review-child` mode, approved) and by the Spec itself (`spec-review`,
+ *   nothing left to fix or file) alike.
+ */
+export type ReportedFate = { kind: "ready-for-review" } | { kind: "flagged"; reason: string } | { kind: "done" };
+
+/** What `runReportFate` did for the one ticket it was told about, plus the board's current state. */
+export type ReportResult = {
+  outcome: { ticketNumber: number; slug: string; fate: ReportedFate["kind"]; folder: Folder };
+  board: BoardState;
+};
+
+/** True when `ticket` is a Spec itself -- i.e. not some child pointing back at one via "## Parent". */
+function isSpecTicket(ticket: TicketRecord): boolean {
+  return specNumberFor(ticket) === ticket.number;
+}
+
+/** Appends a "## Flagged" section (TICKET-FORMAT.md's "Flagged tickets") carrying `reason` to a ticket file's content. */
+function appendFlaggedSection(content: string, reason: string): string {
+  return `${content.replace(/\s+$/, "")}\n\n## Flagged\n\n${reason}\n`;
+}
+
+/**
+ * `board-step report`'s full entry point: enacts one fate `spec-pass` or
+ * `spec-review` already decided for ticket `ticketNumber` -- the move and
+ * commit those skills used to perform themselves (see TICKET-FORMAT.md's
+ * "Spec board operations", "Report fate") -- using the same `git-ts`
+ * move-plus-commit primitives and commit-message conventions
+ * `decideAndAct` above already uses, then returns the board state for
+ * whichever Spec the reported ticket belongs to (itself, when the ticket
+ * *is* a Spec). Ticket lookup is board-wide, not scoped to a Spec already
+ * known to the caller -- unlike `runBoardStep`, this never needs a Spec
+ * number as input, only the reported ticket's own number.
+ */
+export function runReportFate(boardDir: string, ticketNumber: number, fate: ReportedFate): ReportResult {
+  const ticket = findTicket(boardDir, ticketNumber);
+  const isSpec = isSpecTicket(ticket);
+  const srcPath = ticketPath(ticket.folder, ticket.number, ticket.slug);
+
+  let destFolder: Folder;
+  let message: string;
+  let appendFlagReason: string | null = null;
+
+  switch (fate.kind) {
+    case "ready-for-review":
+      if (isSpec) {
+        throw new Error(
+          `Ticket #${ticketNumber} is a Spec -- "ready-for-review" only applies to a child ticket; a Spec's own review-readiness is mechanical (see "execute-spec-ready" above), never reported.`,
+        );
+      }
+      destFolder = "review";
+      message = `${ticket.number}: review — ${ticket.slug}`;
+      break;
+
+    case "done":
+      destFolder = "done";
+      message = `${ticket.number}: done — ${ticket.slug}`;
+      break;
+
+    case "flagged":
+      if (isSpec) {
+        destFolder = "in-progress";
+        message = `${ticket.number}: reopened — ${ticket.slug}`;
+      } else {
+        destFolder = "todo";
+        message = `${ticket.number}: flag — ${ticket.slug} (${fate.reason})`;
+        appendFlagReason = fate.reason;
+      }
+      break;
+  }
+
+  // Move first, then edit content at the new path (when this fate calls for
+  // it) -- `moveFile`'s `git mv` alone only ever stages the rename using
+  // whatever content was already in the index, so an edit made before the
+  // move would land on disk but never get staged for the commit below (see
+  // `addFile`'s own doc comment in git-ts). Editing after the move and
+  // explicitly staging that edit with `addFile` keeps both the rename and
+  // the content change in the same one commit either way.
+  const destPath = ticketPath(destFolder, ticket.number, ticket.slug);
+  moveFile(boardDir, srcPath, destPath);
+  if (appendFlagReason !== null) {
+    const absDestPath = path.join(boardDir, destPath);
+    fs.writeFileSync(absDestPath, appendFlaggedSection(fs.readFileSync(absDestPath, "utf8"), appendFlagReason));
+    addFile(boardDir, destPath);
+  }
+  commit(boardDir, message);
+
+  return {
+    outcome: { ticketNumber: ticket.number, slug: ticket.slug, fate: fate.kind, folder: destFolder },
+    board: buildBoardState(boardDir, specNumberFor(ticket)),
+  };
 }

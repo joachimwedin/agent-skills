@@ -120,6 +120,13 @@ narration, never to decide what happens next. `spec-loop` calls
 `spec-pass` never scans a board or reaches this decision itself — it's
 always handed an explicit ticket and mode.
 
+Neither `spec-pass` nor `spec-review` moves or commits a ticket into
+`agent-tickets` itself once a judgment pass decides where that ticket
+ends up — see "Report fate" below. `board-step report`, given a ticket
+number and that reported fate, is the sole executor of the move and
+commit either way, using the same commit-message conventions
+`board-step`'s own mechanical Claim/Spec-ready steps already use.
+
 - **Pickable**: a child ticket in `todo/` with no `## Flagged` section
   and every `## Blocked by` reference already in `done/`.
 - **Priority scan**: the single next action for a Spec's board, checked
@@ -155,19 +162,57 @@ always handed an explicit ticket and mode.
   is the sole executor; no judgment pass is spawned for this step
   either.
 - **Work**: carry a child already sitting in `in-progress/` to a
-  terminal state — `review/` once done, or back to `todo/` with a
-  `## Flagged` section if it can't be finished. A judgment pass
-  (`spec-pass`, mode `work`) is always spawned with this exact ticket
-  named, never left to rediscover it.
+  terminal state — ready for `review/` once done, or flagged and headed
+  back to `todo/` with a `## Flagged` section if it can't be finished
+  — then report that fate (see "Report fate" below) rather than moving
+  or committing it directly. A judgment pass (`spec-pass`, mode `work`)
+  is always spawned with this exact ticket named, never left to
+  rediscover it.
 - **Child review**: decide the child's fate against its own
   `## Acceptance criteria` — fix what's missing or approve outright,
-  tick any boxes that now reflect reality, then move it to `done/`. A
-  child's review always ends at `done/`, never back for more coding. A
-  judgment pass (`spec-pass`, mode `review-child`) is always spawned
-  with this exact ticket named.
+  tick any boxes that now reflect reality — then report it `done`
+  rather than moving or committing it directly. A child's review always
+  ends at `done/`, never back for more coding. A judgment pass
+  (`spec-pass`, mode `review-child`) is always spawned with this exact
+  ticket named.
 - **Spec review**: when the item sitting in `review/` is the Spec
   itself, that's `spec-review`'s job, not an ordinary child review — a
-  `spec-review` pass is spawned directly, not through `spec-pass`.
+  `spec-review` pass is spawned directly, not through `spec-pass`. It
+  reports the Spec's own fate the same way a child does — `flagged`
+  (filed one or more new child tickets; the Spec still has more work
+  ahead of it) or `done` (fixed everything directly, or found nothing
+  to flag) — rather than moving or committing the Spec itself directly.
+- **Report fate**: `spec-pass` (either mode) and `spec-review` never
+  move or commit the ticket they were handed themselves — each reports
+  the fate it decided back to whoever invoked it (`spec-loop`, or a
+  person running the skill directly), which then runs `board-step
+  report <ticket-number> <board-dir> --fate <fate> [--reason "<why>"]`
+  (or the self-describing ticket-file-path form) to enact it. Exactly
+  three fates exist, shared by every caller above:
+  - `ready-for-review` — `in-progress/` → `review/`. Only ever reported
+    for a child (`spec-pass`, `work` mode, finished); never for the
+    Spec itself, whose own review-readiness is already fully mechanical
+    (see "Spec ready" above).
+  - `flagged` — more work remains before this ticket can close out.
+    For a child (`spec-pass`, `work` mode, blocked) that's
+    `in-progress/` → `todo/` plus an appended `## Flagged` section
+    explaining why — `--reason` is required. For the Spec itself
+    (`spec-review`, having filed new child tickets rather than fixing
+    everything in place) that's `review/` → `in-progress/` instead —
+    no `## Flagged` section is appended (Specs don't carry one; the new
+    child tickets already represent the outstanding work).
+  - `done` — `review/` → `done/`. Reported by a child (`spec-pass`,
+    `review-child` mode, approved) and by the Spec itself
+    (`spec-review`, nothing left to fix or file) alike.
+
+  `board-step report` performs the move and commit itself, using the
+  same commit-message conventions as `board-step`'s mechanical Claim/
+  Spec-ready steps (e.g. `12: review — add-dark-mode-toggle`, `7: done
+  — trim-cache-ttl`, `9: flag — trim-cache-ttl (needs npm access)`, `1:
+  reopened — spec-widget-overhaul`). Only the tracker move is
+  mechanical this way — filing a new child ticket (`spec-review`) and
+  any project-repo commits (both skills) still happen directly, per
+  "publish to the tracker" and "Project commits" below.
 - **Project commits**: when coding or reviewing changes the *project's*
   own repo (not `agent-tickets`), describe the code decisions only —
   the ticket number and filename are local, ephemeral tracker artifacts

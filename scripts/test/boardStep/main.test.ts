@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { runBoardStep } from "../../src/boardStep/main.js";
+import { runBoardStep, runReportFate } from "../../src/boardStep/main.js";
 
 /**
  * Integration tests for `runBoardStep` against real temporary git repos (no
@@ -236,5 +236,98 @@ describe("runBoardStep", () => {
     expect(currentBranchLog(boardDir)).toBe(beforeLog);
     expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
     expect(result.board.children).toEqual([{ number: 2, slug: "add-widget", folder: "todo", blockedBy: [], flagged: true }]);
+  });
+});
+
+describe("runReportFate", () => {
+  it("moves a child reported ready-for-review from in-progress to review and commits", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "in-progress", filename: "2-add-widget", parent: "Spec #1" });
+
+    const result = runReportFate(boardDir, 2, { kind: "ready-for-review" });
+
+    expect(result.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "ready-for-review", folder: "review" });
+    expect(fs.existsSync(path.join(boardDir, "in-progress", "2-add-widget.md"))).toBe(false);
+    expect(fs.existsSync(path.join(boardDir, "review", "2-add-widget.md"))).toBe(true);
+    expect(currentBranchLog(boardDir)).toBe("2: review — add-widget");
+    expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
+    expect(result.board).toEqual({
+      specNumber: 1,
+      spec: { number: 1, slug: "spec-widget-overhaul", folder: "in-progress", blockedBy: [], flagged: false },
+      children: [{ number: 2, slug: "add-widget", folder: "review", blockedBy: [], flagged: false }],
+    });
+  });
+
+  it("moves a child reported done from review to done and commits", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "review", filename: "2-add-widget", parent: "Spec #1" });
+
+    const result = runReportFate(boardDir, 2, { kind: "done" });
+
+    expect(result.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "done", folder: "done" });
+    expect(fs.existsSync(path.join(boardDir, "done", "2-add-widget.md"))).toBe(true);
+    expect(currentBranchLog(boardDir)).toBe("2: done — add-widget");
+    expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
+  });
+
+  it("moves the Spec itself reported done from review to done and commits", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "review", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "done", filename: "2-add-widget", parent: "Spec #1" });
+
+    const result = runReportFate(boardDir, 1, { kind: "done" });
+
+    expect(result.outcome).toEqual({ ticketNumber: 1, slug: "spec-widget-overhaul", fate: "done", folder: "done" });
+    expect(fs.existsSync(path.join(boardDir, "done", "1-spec-widget-overhaul.md"))).toBe(true);
+    expect(currentBranchLog(boardDir)).toBe("1: done — spec-widget-overhaul");
+    expect(result.board.spec.folder).toBe("done");
+  });
+
+  it("flags a blocked child: appends a Flagged section, moves in-progress to todo, and commits with the reason", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "in-progress", filename: "2-add-widget", parent: "Spec #1" });
+
+    const result = runReportFate(boardDir, 2, { kind: "flagged", reason: "sandbox blocks npm install" });
+
+    expect(result.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "flagged", folder: "todo" });
+    expect(fs.existsSync(path.join(boardDir, "in-progress", "2-add-widget.md"))).toBe(false);
+    const content = fs.readFileSync(path.join(boardDir, "todo", "2-add-widget.md"), "utf8");
+    expect(content).toContain("## Flagged");
+    expect(content).toContain("sandbox blocks npm install");
+    expect(currentBranchLog(boardDir)).toBe("2: flag — add-widget (sandbox blocks npm install)");
+    expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
+    expect(result.board.children).toEqual([{ number: 2, slug: "add-widget", folder: "todo", blockedBy: [], flagged: true }]);
+  });
+
+  it("reopens the Spec itself when reported flagged: moves review to in-progress, no Flagged section, and commits", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "review", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "todo", filename: "2-add-widget", parent: "Spec #1" });
+
+    const result = runReportFate(boardDir, 1, { kind: "flagged", reason: "filed 2 new child tickets" });
+
+    expect(result.outcome).toEqual({ ticketNumber: 1, slug: "spec-widget-overhaul", fate: "flagged", folder: "in-progress" });
+    expect(fs.existsSync(path.join(boardDir, "in-progress", "1-spec-widget-overhaul.md"))).toBe(true);
+    const content = fs.readFileSync(path.join(boardDir, "in-progress", "1-spec-widget-overhaul.md"), "utf8");
+    expect(content).not.toContain("## Flagged");
+    expect(currentBranchLog(boardDir)).toBe("1: reopened — spec-widget-overhaul");
+    expect(result.board.spec.folder).toBe("in-progress");
+  });
+
+  it("throws when ready-for-review is reported for the Spec itself", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+
+    expect(() => runReportFate(boardDir, 1, { kind: "ready-for-review" })).toThrow(/Spec/);
+  });
+
+  it("throws when the reported ticket number doesn't exist on the board", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+
+    expect(() => runReportFate(boardDir, 99, { kind: "done" })).toThrow(/99/);
   });
 });

@@ -120,3 +120,30 @@ export function readBoardSnapshot(boardDir: string, specNumber: number): BoardSn
 
   return { specNumber, spec, children };
 }
+
+/**
+ * Locates one ticket by number anywhere on the board at `boardDir`,
+ * regardless of which of the four kanban folders it currently sits in and
+ * with no Spec already known to scope the search -- unlike
+ * `readBoardSnapshot` above, which always starts from a specific Spec.
+ * Used by `board-step report` (see `boardStep/main.ts`'s `runReportFate`),
+ * which acts on a single reported ticket -- Spec or child -- directly.
+ * Throws if no ticket numbered `ticketNumber` exists anywhere on the board.
+ */
+export function findTicket(boardDir: string, ticketNumber: number): TicketRecord {
+  const ticket = readAllTickets(boardDir).find((t) => t.number === ticketNumber);
+  if (ticket === undefined) {
+    throw new Error(`No ticket numbered ${ticketNumber} found on the board at ${boardDir}`);
+  }
+  return ticket;
+}
+
+/**
+ * The Spec number `ticket` belongs to: its own number when it *is* a Spec
+ * (a "## Parent" that doesn't match "Spec #<n>" -- e.g. "None — this is the
+ * Spec."), or the number parsed out of its "## Parent" section otherwise.
+ */
+export function specNumberFor(ticket: TicketRecord): number {
+  const match = PARENT_SPEC_PATTERN.exec(ticket.parent);
+  return match === null ? ticket.number : Number.parseInt(match[1], 10);
+}

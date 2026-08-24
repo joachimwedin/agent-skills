@@ -123,4 +123,54 @@ describe("board-step CLI", () => {
     expect(parsed.outcome).toEqual({ kind: "done" });
     expect(parsed.board.specNumber).toBe(1);
   });
+
+  describe("report", () => {
+    it("enacts a reported ready-for-review fate, commits, and prints JSON with both outcome and board", () => {
+      const boardDir = makeBoardRepo();
+      writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+      writeTicket(boardDir, { folder: "in-progress", filename: "2-add-widget", parent: "Spec #1" });
+
+      const stdout = run(["report", "2", boardDir, "--fate", "ready-for-review"]);
+      const parsed = JSON.parse(stdout);
+
+      expect(parsed.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "ready-for-review", folder: "review" });
+      expect(fs.existsSync(path.join(boardDir, "review", "2-add-widget.md"))).toBe(true);
+      expect(git(boardDir, ["log", "-1", "--format=%s"]).trim()).toBe("2: review — add-widget");
+      expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
+    });
+
+    it("enacts a reported flagged fate with a reason, appending a Flagged section and moving to todo", () => {
+      const boardDir = makeBoardRepo();
+      writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+      writeTicket(boardDir, { folder: "in-progress", filename: "2-add-widget", parent: "Spec #1" });
+
+      const stdout = run(["report", "2", boardDir, "--fate", "flagged", "--reason", "sandbox blocks npm install"]);
+      const parsed = JSON.parse(stdout);
+
+      expect(parsed.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "flagged", folder: "todo" });
+      const content = fs.readFileSync(path.join(boardDir, "todo", "2-add-widget.md"), "utf8");
+      expect(content).toContain("## Flagged");
+      expect(git(boardDir, ["log", "-1", "--format=%s"]).trim()).toBe("2: flag — add-widget (sandbox blocks npm install)");
+    });
+
+    it("also accepts a self-describing path to the reported ticket's own file", () => {
+      const boardDir = makeBoardRepo();
+      writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+      writeTicket(boardDir, { folder: "review", filename: "2-add-widget", parent: "Spec #1" });
+
+      const stdout = run(["report", path.join(boardDir, "review", "2-add-widget.md"), "--fate", "done"]);
+      const parsed = JSON.parse(stdout);
+
+      expect(parsed.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "done", folder: "done" });
+      expect(fs.existsSync(path.join(boardDir, "done", "2-add-widget.md"))).toBe(true);
+    });
+
+    it("errors out when --fate flagged is given with no --reason", () => {
+      const boardDir = makeBoardRepo();
+      writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+      writeTicket(boardDir, { folder: "in-progress", filename: "2-add-widget", parent: "Spec #1" });
+
+      expect(() => run(["report", "2", boardDir, "--fate", "flagged"])).toThrow();
+    });
+  });
 });

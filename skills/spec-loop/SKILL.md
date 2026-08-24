@@ -45,17 +45,23 @@ with "The driving agent only drives" below:
 You (the agent running this skill) never make any judgment-driven
 change yourself — not to the tracker, not to the project repo, not a
 single file, ticket move, or commit, at any point in the loop, beyond
-running `board-step` itself (see "Loop" below): that tool call is the
-one exception, since it's deterministic and mechanical by construction
-— no judgment involved — and it does its own move-plus-commit directly.
-Everything else is: spawning subagents, narrating their reports and the
-tool's, printing board snapshots, and — when the loop ends — stating
-the final outcome. Every judgment-driven change happens inside a
-spawned subagent's own `spec-pass` or `spec-review` invocation, never
-in this conversation directly. If you notice something that seems to
-need fixing (a miswritten ticket, a premature `## Flagged` section, a
-missing file) do not fix it yourself — say what you noticed when you
-report the outcome, and let the user decide.
+running `board-step` itself (see "Loop" below): both its decide-and-act
+form and its `report` form (enacting a fate a subagent already decided
+and reported back — see step 2 below) are the exception, since either
+is deterministic and mechanical by construction — no judgment involved
+— and each does its own move-plus-commit directly. Everything else is:
+spawning subagents, narrating their reports and the tool's, printing
+board snapshots, and — when the loop ends — stating the final outcome.
+Every judgment-driven change happens inside a spawned subagent's own
+`spec-pass` or `spec-review` invocation, never in this conversation
+directly — that subagent reports the fate it decided rather than
+moving or committing anything itself (TICKET-FORMAT.md's "Report
+fate"), and enacting that report via `board-step report` is this
+driving agent's own mechanical job, not a second judgment call. If you
+notice something that seems to need fixing (a miswritten ticket, a
+premature `## Flagged` section, a missing file) do not fix it yourself
+— say what you noticed when you report the outcome, and let the user
+decide.
 
 ## Board snapshot
 
@@ -147,20 +153,45 @@ Each iteration:
      time — never in parallel) instructed to invoke `spec-pass` on
      ticket `#<n>` in that exact mode. It has no memory of this
      conversation, so hand it the ticket number (or path) and the mode
-     directly, and have it report back exactly what happened. Narrate
-     that outcome (e.g. "coded #12, moved it to review/", "resolved #9
-     in review").
+     directly. Per TICKET-FORMAT.md's "Report fate", it reports back a
+     fate rather than moving or committing anything itself — `ready-
+     for-review`, `flagged` (with a reason), or `done`. Enact that fate
+     yourself by running:
+
+     ```
+     board-step report <n> <board-dir> --fate <fate> [--reason "<why>"]
+     board-step report <path-to-ticket-file> --fate <fate> [--reason "<why>"]
+     ```
+
+     — mechanical, per "The driving agent only drives" above; use this
+     call's own `board` field for this iteration's snapshot (step 3
+     below), not the subagent's say-so. Narrate both the subagent's
+     work and the resulting move (e.g. "coded #12, reported ready-for-
+     review — moved it to review/", "resolved #9 in review, reported
+     done — moved it to done/").
    - **`{ "kind": "dispatch-spec-review" }`** — spawn a subagent
      instructed to run `spec-review` on this Spec directly (not
-     through `spec-pass` — that skill no longer handles this case).
-     Narrate its outcome (e.g. "ran spec-review — reopened with 2 new
-     child tickets"). There's no cap on how many times a Spec can cycle
-     back through `spec-review` this way.
+     through `spec-pass` — that skill no longer handles this case). It
+     likewise reports the Spec's own fate — `flagged` (filed new child
+     tickets, with a reason naming them) or `done` — rather than moving
+     or committing the Spec itself. Enact it the same way as above:
+
+     ```
+     board-step report <spec-number> <board-dir> --fate <fate> [--reason "<why>"]
+     ```
+
+     Narrate both the review's outcome and the resulting move (e.g.
+     "ran spec-review — reopened with 2 new child tickets, moved back
+     to in-progress/"). There's no cap on how many times a Spec can
+     cycle back through `spec-review` this way.
    - **`{ "kind": "done" }`** or **`{ "kind": "blocked", "reason":
      "<reason>" }`** — the loop is over; see "Blocked" and "Report"
      below.
-3. Render the board snapshot from this same call's `board` field, per
-   "Board snapshot" above — no separate re-scan step.
+3. Render the board snapshot from the most recent `board-step` call's
+   `board` field, per "Board snapshot" above — the `report` call from
+   step 2 when this iteration dispatched one, otherwise this same
+   iteration's decide-and-act call. No separate re-scan step either
+   way.
 4. Unless step 2 was `done` or `blocked`, repeat from 1.
 
 ## Consecutive-failure circuit breaker
