@@ -16,7 +16,7 @@ If invoked with no Spec, resolve one yourself before doing anything
 else — this resolution is a read, not a change, so it doesn't conflict
 with "The driving agent only drives" below:
 
-1. List every project subfolder under `~/repos/agent-tickets/`,
+1. List every project subfolder under `~/repos/agent-tickets/boards/`,
    unfiltered — including ones with no open Specs. Always ask the user
    to pick one; never auto-skip this step, even if only one project
    happens to have an open Spec.
@@ -53,7 +53,7 @@ scan the Spec's board yourself — a read, not a change, so it doesn't
 conflict with "The driving agent only drives" above:
 
 - List the four folders under
-  `~/repos/agent-tickets/<project>/{todo,in-progress,review,done}/`.
+  `~/repos/agent-tickets/boards/<project>/{todo,in-progress,review,done}/`.
   Each ticket's number and slug come from its filename
   (`<n>-<slug>.md`); its state is whichever of the four folders it's
   currently sitting in.

@@ -10,13 +10,13 @@ ticket — the one a **child ticket** points back to via `## Parent`.
 Specs and their child tickets share one numbering sequence, independent
 per project.
 
-- **Spec file**: `~/repos/agent-tickets/<project>/<n>-spec-<slug>.md`
-- **Child ticket file**: `~/repos/agent-tickets/<project>/<n>-<slug>.md` (no `spec-` prefix)
+- **Spec file**: `~/repos/agent-tickets/boards/<project>/<n>-spec-<slug>.md`
+- **Child ticket file**: `~/repos/agent-tickets/boards/<project>/<n>-<slug>.md` (no `spec-` prefix)
 
 ## Kanban folders
 
 Every ticket — Spec or child — moves through the same four folders, all
-under `~/repos/agent-tickets/<project>/`:
+under `~/repos/agent-tickets/boards/<project>/`:
 
 - `todo/` — not yet started.
 - `in-progress/` — currently being worked on.
@@ -88,7 +88,7 @@ itself (e.g. appending to its Decisions so far).
 
 ## When a skill says "publish to the tracker"
 
-Create a new file under `~/repos/agent-tickets/<project>/todo/`,
+Create a new file under `~/repos/agent-tickets/boards/<project>/todo/`,
 following the Spec/Child ticket file pattern and Ticket template above,
 and commit it. `<n>` continues the project's existing shared ticket
 sequence — check across all four kanban folders for the highest number
@@ -98,7 +98,7 @@ in use, or start at 1 if none exist yet.
 
 Read the file directly at the referenced path, or by number — the
 number is shared across Specs and child tickets, so it uniquely
-identifies one file somewhere under `~/repos/agent-tickets/<project>/todo/`,
+identifies one file somewhere under `~/repos/agent-tickets/boards/<project>/todo/`,
 `in-progress/`, `review/`, or `done/`.
 
 ## Spec board operations
@@ -151,14 +151,14 @@ shape `to-spec`/`to-tickets` produce.
 Used by `wayfinder`. The **map** is a Spec; its **children** are
 ordinary child tickets, linked and numbered exactly as above.
 
-- **Map**: a Spec (`~/repos/agent-tickets/<project>/<n>-spec-<slug>.md`).
+- **Map**: a Spec (`~/repos/agent-tickets/boards/<project>/<n>-spec-<slug>.md`).
   A `Type: wayfinder-map` line under the title marks it as one,
   mirroring child tickets below. Its body carries the wayfinder map
   shape instead of `## What to build` / `## Acceptance criteria`:
   `## Destination`, `## Notes`, `## Decisions so far`,
   `## Not yet specified`, `## Out of scope`.
 - **Child ticket**: a child ticket
-  (`~/repos/agent-tickets/<project>/<n>-<slug>.md`), `## Parent`
+  (`~/repos/agent-tickets/boards/<project>/<n>-<slug>.md`), `## Parent`
   pointing at the map as usual. `## What to build` / `## Acceptance
   criteria` are replaced by `## Question` — a ticket resolves a
   decision, not a build. A `Type: <research|prototype|grilling|task>`
