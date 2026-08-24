@@ -14,7 +14,7 @@ Every member repo's detail lives at `./repos/{repo}.md`.
 
 ## System shape
 
-{A handful of durable, always true facts about the group as a whole - not a repo's own detail. Keep this very short: a few one-line facts, not paragraphs. Omit the section entirely if there's nothing that clears the bar of "true of the whole system, not just one repo."}
+{A handful of durable, always true facts about the group as a whole — not a repo's own detail. Keep this very short: a few one-line facts, not paragraphs. Omit the section entirely if there's nothing that clears the bar of "true of the whole system, not just one repo."}
 
 ## {First group heading}
 
@@ -25,9 +25,9 @@ Every member repo's detail lives at `./repos/{repo}.md`.
 {repo-3}, {repo-4}
 ```
 
-Group entries under headings when natural clusters emerge - mirroring how `CONTEXT.md` groups terms under subheadings. If all repos belong to one cohesive group, or there are only a couple, a flat comma-separated list under the index needs no headings at all. 
+Group entries under headings when natural clusters emerge — mirroring how `CONTEXT.md` groups terms under subheadings. If all repos belong to one cohesive group, or there are only a couple, a flat comma-separated list under the index needs no headings at all.
 
-What clusters repos varies by what the group actually is - a services architecture might split by role (frontends, APIs, infrastructure); a library ecosystem might split by package type or consumer; a tool suite might split by what team owns each. Derive headings from what actually clusters **this** group of repos.
+What clusters repos varies by what the group actually is — a services architecture might split by role (frontends, APIs, infrastructure); a library ecosystem might split by package type or consumer; a tool suite might split by what team owns each. Derive headings from what actually clusters **this** group of repos.
 
 ## repos/{repo}.md
 
@@ -49,7 +49,7 @@ One file per member repo, named after the repo, in the `repos/` subdirectory.
 
 A repo with no dependencies on its siblings omits the `## Depends on` section entirely — don't write "None."
 
-`## Notes` is optional — most repos won't need one. It holds durable, repo-specific facts that don't fit the other two sections: a config entry or client that looks live but isn't, state the repo owns but doesn't share, a feature that's flag-gated off. It is not a place for the *decision* behind a fact (that's an ADR, if it clears the ADR bar) or for *mutable* status (that belongs in the issue tracker — link to the ticket rather than restating its current state here, since this file will go stale the moment the ticket resolves.)
+`## Notes` is optional — most repos won't need one. It holds durable, repo-specific facts that don't fit the other two sections: a config entry or client that looks live but isn't, state the repo owns but doesn't share, a feature that's flag-gated off. It is not a place for the *decision* behind a fact (that's an ADR, if it clears the ADR bar) or for *mutable* status (that belongs in the issue tracker — link to the ticket rather than restating its current state here, since this file will go stale the moment the ticket resolves).
 
 ## Rules
 
