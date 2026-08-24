@@ -4,19 +4,20 @@ description: Generate a PR description (overview, changes, per-file table) from 
 disable-model-invocation: true
 ---
 
-Generate a pull request summary for the current branch, in raw markdown, printed directly in the response. Never write it to a file.
+Generate a pull request summary for the current branch's diff against the repo's default branch.
 
 ## Determine the diff scope
 
-1. Find the repo's default branch: `git symbolic-ref refs/remotes/origin/HEAD` (strip the `refs/remotes/origin` prefix). Fall back to `main` if that fails.
-2. Diff the current branch against that default branch: `git log <default>..HEAD --oneline` for the commit list. `git diff <default>..HEAD` for the full content diff.
+1. Find the repo's default branch: `git symbolic-ref refs/remotes/origin/HEAD` (strip the `refs/remotes/` prefix, giving e.g. `origin/main`) - use this remote-tracking ref as `<default>`, not the bare branch name, so a stale local checkout of it doesn't skew the comparison. Fall back to `origin/main` if that fails, or to the bare branch `main` only if there's no `origin` remote at all.
+2. Diff the current branch against that default branch: `git log <default>..HEAD --oneline` for the commit list. `git diff <default>...HEAD` (triple-dot, diffing from the merge base) for the full content diff - the two-dot diff form (`git diff <default>..HEAD`) would also pick up unrelated changes made to `<default>` since the branch diverged.
 3. This is the entire scope: every commit since the branch diverged, no matter how many. Don't ask the user for a base ref or commit range.
-4. Try to deduce a related ticket: look for a ticket-key pattern (e.g. `PROJ-123`, `#123`) in the branch name and in the subject/body of each commit in scope. If the same key shows up, that's the related ticket. If nothing matches, there is no related ticket - don't guess or fabricate one.
-5. Try to deduce related work beyond that one ticket: look for mentions of *other* ticket keys, or explicit references to follow-up/precondition work, in the commit bodies and in comments adjacent to the diff. If something explicitly states a relationship (e.g. a commit body naming another ticket, a "see PROJ-432" style comment), that's related work. If nothing explicitly says so, there is no related work - don't infer a connection that isn't stated somewhere in the commits or code.
+4. If the commit list is empty (the current branch has no commits ahead of the default branch), say so and stop - don't generate a summary for an empty diff.
+5. Try to deduce a related ticket: look for a ticket-key pattern (e.g. `PROJ-123`, `#123`) in the branch name and in the subject/body of each commit in scope. If the same key shows up, that's the related ticket. If nothing matches, there is no related ticket - don't guess or fabricate one.
+6. Try to deduce related work beyond that one ticket: look for mentions of *other* ticket keys, or explicit references to follow-up/precondition work, in the commit bodies and in comments adjacent to the diff. If something explicitly states a relationship (e.g. a commit body naming another ticket, a "see PROJ-432" style comment), that's related work. If nothing explicitly says so, there is no related work - don't infer a connection that isn't stated somewhere in the commits or code.
 
 ## Write the summary
 
-Structure, always in this order, always with every section present regardless of how small the diff is:
+Structure, always in this order. The overview paragraph, `Changes` list, and `File summary` table are mandatory no matter how small the diff is; the `Ticket` line and `Related work` section are conditional, per the notes below:
 
 1. **`## Pull request overview`** - one heading. If a ticket was deduced, add a line right below it: **`**Ticket:** <key>`** (plain text, no invented URL). Omit this line entirely if no ticket could be deduced.
 2. A short overview paragraph: what the PR does and why, written for someone who hasn't seen the diff. Wrap identifiers, config keys, and file/method names that appear in the diff in backticks.

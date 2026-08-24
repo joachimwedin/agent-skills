@@ -1,6 +1,6 @@
 ---
 name: system-mapping
-description: Build and sharpen how a group of related repos relate to each other — each repo's purpose, and its dependencies on the others and why. Use when the user wants to document why one repo depends on another, or record a repo's purpose, or when another skill needs to maintain it.
+description: Build and sharpen how a group of related repos relate to each other — each repo's purpose, its dependencies on the others and why, and cross-repo architecture decisions. Use when the user wants to document why one repo depends on another, record a repo's purpose, record an architecture decision that spans multiple repos, or when another skill needs to maintain it.
 ---
 
 # System Mapping
@@ -18,20 +18,20 @@ Lives in a dedicated context repo, a sibling of the repos it describes. For exam
 └── shop-context/
     ├── CLAUDE.md        ← context pointers
     ├── repos/
-    │   ├── shop-api.md  ← shop-api's purpose, what depends on it and why
+    │   ├── shop-api.md  ← shop-api's purpose, what it depends on and why
     │   └── shop-web.md  ← shop-web's purpose, what it depends on and why
     └── docs/adr/        ← decisions that span repos (created on first ADR)
 ```
 
 Use the format in [REPO-FORMAT.md](./REPO-FORMAT.md).
 
-Create files lazily — only when you have something to write. Adding a repo to the group means adding its name to `CLAUDE.md`; its own `repos/{repo}.md` file waits until there's a purpose or dependency to record.
+Adding a repo to the group means adding its name to `CLAUDE.md` right away; its own `repos/{repo}.md` file follows the lazy-creation rule in REPO-FORMAT.md.
 
 ## Cross-repo architecture decisions
 
-A decision that spans multiple member repos - not owned by any single repo's own ADR log - gets recorded in the context repo's own `docs/adr/`, using the same format domain modeling uses for a single repo: [ADR-FORMAT.md](../domain-modeling/ADR-FORMAT.md). Create the directory lazily, on first entry.
+A decision that spans multiple member repos — not owned by any single repo's own ADR log — gets recorded in the context repo's own `docs/adr/`, using the same format domain modeling uses for a single repo: [ADR-FORMAT.md](../domain-modeling/ADR-FORMAT.md).
 
-Offer one only when it's genuinely cross-repo (which of two repos owns a shared resource until a split finishes, an integration pattern between two services) and meets the usual bar from ADR-FORMAT.md: hard to reverse, surprising without context, the result of a real trade-off. A decision internal to one repo belongs in that repo's own `docs/adr/` instead, via domain-modeling.
+Offer one only when it's genuinely cross-repo (which of two repos owns a shared resource until a split finishes, an integration pattern between two services) and meets the three criteria in ADR-FORMAT.md. A decision internal to one repo belongs in that repo's own `docs/adr/` instead, via domain-modeling.
 
 ## During the session
 

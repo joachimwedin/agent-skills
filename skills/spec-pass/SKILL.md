@@ -9,8 +9,8 @@ Invoked with a ticket number (or path) and a mode: `work` or
 `review-child`. Never scans a Spec's board or decides what's next
 itself, in any context — the caller (`spec-loop`, or a person invoking
 this directly) always names the exact ticket and mode. Claiming a
-pickable child and moving a fully-`done/` Spec to `review/` are both
-purely mechanical and are handled entirely by
+pickable child, and moving a Spec whose children are all `done/` to
+`review/`, are both purely mechanical and are handled entirely by
 `agent-skills/scripts/board-step` before this skill is ever invoked;
 this skill only carries an already-claimed child, or a child already
 sitting in `review/`, to its terminal state per
@@ -20,8 +20,17 @@ operations".
 ## Mode: `review-child`
 
 The ticket is a child sitting in `review/`. Resolve it per "Spec board
-operations": fix what's missing or approve outright against its
-`## Acceptance criteria`, tick boxes, move it to `done/`.
+operations":
+
+1. **Resolve**: fix what's missing or approve outright against its
+   `## Acceptance criteria`, ticking each box that now reflects
+   reality.
+2. **Feedback loops**: if `package.json` defines a `build` script, run
+   it; if it defines a `test` script, run that too. Skip whichever
+   doesn't exist.
+3. **Commit** any fix to the project's own repo, per
+   TICKET-FORMAT.md's "Project commits".
+4. **Close**: move it to `done/`, commit.
 
 ## Mode: `work`
 
@@ -38,11 +47,11 @@ to a terminal state in this same pass:
    it; if it defines a `test` script, run that too. Skip whichever
    doesn't exist.
 4. **Commit** to the project's own repo, per TICKET-FORMAT.md's
-   "Project commits" — plus files changed and any blockers or notes for
-   whoever picks this board up next.
+   "Project commits".
 5. **Decide its fate**:
    - Every `## Acceptance criteria` box checked — move it to `review/`,
      commit.
    - Can't finish for reasons outside your control (e.g. a sandbox
      blocks a genuinely required command) — append `## Flagged` per
-     TICKET-FORMAT.md, move back to `todo/`, commit.
+     TICKET-FORMAT.md's "Flagged tickets", move back to `todo/`,
+     commit.

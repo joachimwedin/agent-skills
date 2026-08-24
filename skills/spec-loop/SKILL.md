@@ -1,6 +1,6 @@
 ---
 name: spec-loop
-description: Drive a Spec's board on agent-tickets to completion — call the fast-path `board-step` tool every iteration, spawning a spec-pass or spec-review subagent only when the next action needs judgment, one at a time and never in parallel, until the board can't be progressed any further.
+description: Drive a Spec's board on agent-tickets to completion — call the fast-path `board-step` tool every iteration, spawning a `spec-pass` or `spec-review` subagent only when the next action needs judgment, one at a time and never in parallel, until the board can't be progressed any further.
 disable-model-invocation: true
 ---
 
@@ -10,7 +10,7 @@ Invoked with a Spec (number or path). Loops
 `agent-skills/scripts/board-step` over that Spec's board — it
 decides and, whenever the next action is purely mechanical, performs
 it directly, returning the board's current state alongside its
-verdict; a spec-pass or spec-review subagent is spawned only when the
+verdict; a `spec-pass` or `spec-review` subagent is spawned only when the
 next action needs judgment — until nothing's left it can progress.
 `agent-skills/scripts/board-state` is its read-only counterpart,
 called once before the loop starts to render the board's opening
@@ -28,7 +28,7 @@ with "The driving agent only drives" below:
    happens to have an open Spec.
 2. Within the chosen project, list every Spec file
    (`<n>-spec-<slug>.md`) not currently sitting in `done/`, excluding
-   any with a `Type: wayfinder-map` line — spec-loop has no defined
+   any with a `Type: wayfinder-map` line — `spec-loop` has no defined
    behavior for a wayfinder map.
    - **Zero** matches — report "no open Specs in `<project>`" and end
      the turn. Don't loop back to let the user pick a different
@@ -174,8 +174,8 @@ action yourself (editing a ticket, running a command, touching the
 project repo) — that's a change, and per "The driving agent only
 drives" above, this skill never makes those. Just report why, per
 `board-step`'s reported reason, and end the turn. Unblocking is the
-user's call, made outside this skill; re-invoke spec-loop once they've
-acted.
+user's call, made outside this skill; re-invoke `/spec-loop` once
+they've acted.
 
 ## Report
 
