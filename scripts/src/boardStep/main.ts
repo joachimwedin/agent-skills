@@ -234,20 +234,24 @@ export function runReportFate(boardDir: string, ticketNumber: number, fate: Repo
       break;
   }
 
-  // Move first, then edit content at the new path (when this fate calls for
-  // it) -- `moveFile`'s `git mv` alone only ever stages the rename using
-  // whatever content was already in the index, so an edit made before the
-  // move would land on disk but never get staged for the commit below (see
-  // `addFile`'s own doc comment in git-ts). Editing after the move and
-  // explicitly staging that edit with `addFile` keeps both the rename and
-  // the content change in the same one commit either way.
+  // Move first, then append a "## Flagged" section at the new path (when
+  // this fate calls for it). Either way, explicitly `addFile` the
+  // destination before committing: `moveFile`'s `git mv` alone only ever
+  // stages the rename using whatever content was already in the index, not
+  // the working tree -- so it would silently drop any edit already sitting
+  // on disk before this call ever ran (e.g. a `spec-pass` review-child pass
+  // ticking `## Acceptance criteria` boxes per TICKET-FORMAT.md's "Child
+  // review", before reporting `done` rather than committing that edit
+  // itself), on top of dropping a "## Flagged" section appended here. A
+  // plain `git add` after the move picks up both cases in the same one
+  // commit, and is a no-op when the caller made no edit at all.
   const destPath = ticketPath(destFolder, ticket.number, ticket.slug);
   moveFile(boardDir, srcPath, destPath);
   if (appendFlagReason !== null) {
     const absDestPath = path.join(boardDir, destPath);
     fs.writeFileSync(absDestPath, appendFlaggedSection(fs.readFileSync(absDestPath, "utf8"), appendFlagReason));
-    addFile(boardDir, destPath);
   }
+  addFile(boardDir, destPath);
   commit(boardDir, message);
 
   return {

@@ -1,38 +1,6 @@
-import type { ReportedFate } from "../boardStep/main.js";
+import { extractFlag } from "../cli/extractFlag.js";
+import { parseReportedFate } from "../cli/parseReportedFate.js";
 import { landChild } from "./main.js";
-
-/**
- * Pulls a `--flag <value>` pair out of `argv` wherever it appears, returning
- * that value alongside every remaining argument with the flag and its value
- * removed -- mirrors `boardStep/cli.ts`'s own `extractFlag` (duplicated
- * rather than imported: a `cli.ts` module is always a CLI's own entry point,
- * never imported elsewhere, matching that module's existing convention).
- */
-function extractFlag(argv: string[], flag: string): { value: string | undefined; rest: string[] } {
-  const index = argv.indexOf(flag);
-  if (index === -1) {
-    return { value: undefined, rest: argv };
-  }
-  const value = argv[index + 1];
-  return { value, rest: [...argv.slice(0, index), ...argv.slice(index + 2)] };
-}
-
-/** Parses `land-child`'s `--fate`/`--reason` flags into a `ReportedFate`, mirroring `boardStep/cli.ts`'s `parseReportedFate`. */
-function parseReportedFate(fateArg: string | undefined, reasonArg: string | undefined): ReportedFate {
-  switch (fateArg) {
-    case "ready-for-review":
-      return { kind: "ready-for-review" };
-    case "done":
-      return { kind: "done" };
-    case "flagged":
-      if (reasonArg === undefined) {
-        throw new Error('land-child ... --fate flagged also needs --reason "<why>"');
-      }
-      return { kind: "flagged", reason: reasonArg };
-    default:
-      throw new Error(`Unknown --fate "${fateArg}" -- expected one of: ready-for-review, flagged, done.`);
-  }
-}
 
 /**
  * The CLI surface `spec-loop`'s driving instructions call to land one
@@ -58,7 +26,7 @@ export function main(argv: string[]): void {
   const { value: fateArg, rest: afterFate } = extractFlag(argv, "--fate");
   const { value: reasonArg, rest: afterReason } = extractFlag(afterFate, "--reason");
   const { value: attemptArg, rest: positional } = extractFlag(afterReason, "--attempt");
-  const fate = parseReportedFate(fateArg, reasonArg);
+  const fate = parseReportedFate("land-child", fateArg, reasonArg);
 
   const [projectRepoDir, baseBranch, childBranch, boardDir, ticketNumberArg] = positional;
   if (

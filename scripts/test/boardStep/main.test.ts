@@ -272,6 +272,33 @@ describe("runReportFate", () => {
     expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
   });
 
+  it("carries an on-disk edit made before reporting (e.g. a review-child pass ticking boxes) into the move commit, for both done and ready-for-review", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "review", filename: "2-add-widget", parent: "Spec #1" });
+    writeTicket(boardDir, { folder: "in-progress", filename: "3-add-gadget", parent: "Spec #1" });
+
+    // Per TICKET-FORMAT.md's "Report fate", a spec-pass pass edits the
+    // ticket file's content directly (ticking boxes) but never commits that
+    // edit itself -- it's left sitting as an uncommitted working-tree diff
+    // when runReportFate is called, exactly like a real spec-pass subagent
+    // leaves it.
+    const reviewTicketPath = path.join(boardDir, "review", "2-add-widget.md");
+    fs.writeFileSync(reviewTicketPath, fs.readFileSync(reviewTicketPath, "utf8").replace("- [ ] ...", "- [x] ..."));
+    const inProgressTicketPath = path.join(boardDir, "in-progress", "3-add-gadget.md");
+    fs.writeFileSync(inProgressTicketPath, fs.readFileSync(inProgressTicketPath, "utf8").replace("- [ ] ...", "- [x] ..."));
+
+    const doneResult = runReportFate(boardDir, 2, { kind: "done" });
+    const reviewResult = runReportFate(boardDir, 3, { kind: "ready-for-review" });
+
+    expect(doneResult.outcome).toEqual({ ticketNumber: 2, slug: "add-widget", fate: "done", folder: "done" });
+    expect(fs.readFileSync(path.join(boardDir, "done", "2-add-widget.md"), "utf8")).toContain("- [x] ...");
+    expect(reviewResult.outcome).toEqual({ ticketNumber: 3, slug: "add-gadget", fate: "ready-for-review", folder: "review" });
+    expect(fs.readFileSync(path.join(boardDir, "review", "3-add-gadget.md"), "utf8")).toContain("- [x] ...");
+    // Both edits landed in their own commit -- nothing left uncommitted.
+    expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
+  });
+
   it("moves the Spec itself reported done from review to done and commits", () => {
     const boardDir = makeBoardRepo();
     writeTicket(boardDir, { folder: "review", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
