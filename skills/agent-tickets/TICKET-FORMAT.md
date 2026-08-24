@@ -107,6 +107,14 @@ Used by `spec-pass`, `spec-loop`, and `spec-review`, for an ordinary Spec (no
 `Type: wayfinder-map` line) whose children are build tickets — the
 shape `to-spec`/`to-tickets` produce.
 
+This whole board — the Priority scan below and the mechanical
+transitions it can trigger — is computed and (where mechanical)
+executed by `agent-tickets/scripts/next-action`, a deterministic tool
+taking a Spec (number or path) and returning either what it already
+did, or the ticket/mode a judgment pass needs. `spec-loop` calls it
+every iteration; `spec-pass` never scans a board or reaches this
+decision itself — it's always handed an explicit ticket and mode.
+
 - **Pickable**: a child ticket in `todo/` with no `## Flagged` section
   and every `## Blocked by` reference already in `done/`.
 - **Priority scan**: the single next action for a Spec's board, checked
@@ -121,7 +129,10 @@ shape `to-spec`/`to-tickets` produce.
      claiming a child now always moves the Spec there first.)
   3. A child already sits in `in-progress/` — it's been claimed but not
      yet carried to a terminal state: work it.
-  4. A pickable child sits in `todo/`: claim it.
+  4. A pickable child sits in `todo/`: claim it — the lowest ticket
+     number among every simultaneously pickable child, deterministically,
+     every time. No other priority ordering exists; ticket category
+     (bugfix, infra, tracer bullet, polish, refactor) plays no part.
   5. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
      (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
      remaining child is `## Flagged` or has an unresolved
@@ -131,16 +142,27 @@ shape `to-spec`/`to-tickets` produce.
   most one child in-progress at a time. The first child claimed on a
   Spec's board also moves the Spec itself from `todo/` to `in-progress/`,
   one-way and never repeated after — the board then shows work is
-  underway even before any child reaches `review/`.
+  underway even before any child reaches `review/`. Purely mechanical —
+  `next-action` is the sole executor, performing the move and commit
+  itself; no judgment pass is ever spawned for this step.
+- **Spec ready**: once every child is `done/`, move the Spec itself to
+  `review/` and commit. Purely mechanical, same as Claim — `next-action`
+  is the sole executor; no judgment pass is spawned for this step
+  either.
 - **Work**: carry a child already sitting in `in-progress/` to a
   terminal state — `review/` once done, or back to `todo/` with a
-  `## Flagged` section if it can't be finished.
+  `## Flagged` section if it can't be finished. A judgment pass
+  (`spec-pass`, mode `work`) is always spawned with this exact ticket
+  named, never left to rediscover it.
 - **Child review**: decide the child's fate against its own
   `## Acceptance criteria` — fix what's missing or approve outright,
   tick any boxes that now reflect reality, then move it to `done/`. A
-  child's review always ends at `done/`, never back for more coding.
+  child's review always ends at `done/`, never back for more coding. A
+  judgment pass (`spec-pass`, mode `review-child`) is always spawned
+  with this exact ticket named.
 - **Spec review**: when the item sitting in `review/` is the Spec
-  itself, that's `spec-review`'s job, not an ordinary child review.
+  itself, that's `spec-review`'s job, not an ordinary child review — a
+  `spec-review` pass is spawned directly, not through `spec-pass`.
 - **Project commits**: when coding or reviewing changes the *project's*
   own repo (not `agent-tickets`), describe the code decisions only —
   the ticket number and filename are local, ephemeral tracker artifacts
