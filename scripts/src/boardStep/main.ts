@@ -47,7 +47,11 @@ function ticketPath(folder: Folder, number: number, slug: string): string {
  */
 function decideAndAct(boardDir: string, specNumber: number): Outcome {
   const snapshot = readBoardSnapshot(boardDir, specNumber);
-  const verdict = classifyNextAction(snapshot);
+  // classifyNextAction now returns every currently-actionable item at
+  // once; this call site still only enacts/reports the first one --
+  // consuming the full set to claim/dispatch every one of them at once
+  // is ticket #4's job, not this ticket's.
+  const [verdict] = classifyNextAction(snapshot);
 
   switch (verdict.kind) {
     case "execute-claim": {
