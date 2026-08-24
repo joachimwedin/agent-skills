@@ -109,10 +109,10 @@ shape `to-spec`/`to-tickets` produce.
 
 This whole board — the Priority scan below and the mechanical
 transitions it can trigger — is computed and (where mechanical)
-executed by `agent-tickets/scripts/board-step`, a deterministic tool
+executed by `agent-skills/scripts/board-step`, a deterministic tool
 taking a Spec (number or path) and returning either what it already
 did, or the ticket/mode a judgment pass needs, together with the
-board's current state. `agent-tickets/scripts/board-state` is its
+board's current state. `agent-skills/scripts/board-state` is its
 read-only counterpart — same Spec argument, same board-state JSON, but
 makes no move and no commit; it's used to render the board for
 narration, never to decide what happens next. `spec-loop` calls

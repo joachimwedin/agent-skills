@@ -11,7 +11,7 @@ itself, in any context — the caller (`spec-loop`, or a person invoking
 this directly) always names the exact ticket and mode. Claiming a
 pickable child and moving a fully-`done/` Spec to `review/` are both
 purely mechanical and are handled entirely by
-`agent-tickets/scripts/board-step` before this skill is ever invoked;
+`agent-skills/scripts/board-step` before this skill is ever invoked;
 this skill only carries an already-claimed child, or a child already
 sitting in `review/`, to its terminal state per
 [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md)'s "Spec board

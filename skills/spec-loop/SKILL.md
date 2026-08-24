@@ -7,12 +7,12 @@ disable-model-invocation: true
 # Spec Loop
 
 Invoked with a Spec (number or path). Loops
-`agent-tickets/scripts/board-step` over that Spec's board — it
+`agent-skills/scripts/board-step` over that Spec's board — it
 decides and, whenever the next action is purely mechanical, performs
 it directly, returning the board's current state alongside its
 verdict; a spec-pass or spec-review subagent is spawned only when the
 next action needs judgment — until nothing's left it can progress.
-`agent-tickets/scripts/board-state` is its read-only counterpart,
+`agent-skills/scripts/board-state` is its read-only counterpart,
 called once before the loop starts to render the board's opening
 snapshot.
 
