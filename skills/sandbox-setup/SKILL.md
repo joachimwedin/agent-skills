@@ -28,7 +28,7 @@ Collect the dependencies the analysis named that resolve to a git-repo folder un
 
 If any remain, list them and ask the user which to add, same as step 2.
 
-For each repo the user adds: spawn a subagent for it too (same briefing as step 3 — full path, full current sibling list including anything else added in this step) and hold its findings alongside the rest. One pass: if its own analysis turns up yet another unselected dependency, resolve it under this same step rather than starting a new round.
+For each repo the user adds: spawn a subagent for it too, same as step 3 — one per repo, run in parallel, same briefing (full path, full current sibling list including anything else added in this step) — and hold its findings alongside the rest. One pass: if its own analysis turns up yet another unselected dependency, resolve it under this same step rather than starting a new round.
 
 For each the user declines: drop that dependency from the held findings — it won't be written. `system-mapping`'s `## Depends on` section is scoped to sandbox siblings only, so a declined repo has no place there.
 
@@ -40,7 +40,7 @@ Once the full name is chosen, suggest at least 3 candidates for a short **alias*
 
 ## 6. Create the context repo
 
-`git init` at `~/repos/<sandbox-name>`, then commit a `CLAUDE.md` with one context pointer per member repo — the initial selection plus anything added in step 4 (format in [system-mapping's REPO-FORMAT.md](../system-mapping/REPO-FORMAT.md)) — and write each of those repos' `.md` file from its held findings, in system-mapping's format.
+`git init` at `~/repos/<sandbox-name>`, then commit a `CLAUDE.md` listing every member repo — the initial selection plus anything added in step 4 — and write each of those repos' `.md` file from its held findings. Use the respective CLAUDE.md and `repos/{repo}.md` templates in [system-mapping's REPO-FORMAT.md](../system-mapping/REPO-FORMAT.md) — they are two distinct formats, not one shared format.
 
 Don't commit anything else here — the outer-pointer stub used in step 7 is generated at print-time, not stored in the repo. `CLAUDE.md`'s own repo-pointer links (`./repos/{repo}.md`) only resolve correctly when read from inside the context repo itself — copying `CLAUDE.md` verbatim into the shared parent directory the sandbox opens in would break every one of those links, which is why the sandbox gets the small stub below instead.
 
@@ -66,13 +66,13 @@ Context for these repos lives in [<sandbox-name>/CLAUDE.md](./<sandbox-name>/CLA
 
   if ! sbx ls -q | grep -qx "$name"; then
     sbx create --name "$name" claude "${paths[@]}"
-    sbx cp ~/.claude/settings.json "$name":/home/agent/.claude/settings.json
-    sbx cp ~/.claude/statusline-command.sh "$name":/home/agent/.claude/statusline-command.sh
+    sbx cp "$HOME/.claude/settings.json" "$name":/home/agent/.claude/settings.json
+    sbx cp "$HOME/.claude/statusline-command.sh" "$name":/home/agent/.claude/statusline-command.sh
 
     local stub
     stub=$(mktemp)
     printf '%s\n' "$stub_claude_md" > "$stub"
-    sbx cp "$stub" "$name":$HOME/repos/CLAUDE.md
+    sbx cp "$stub" "$name":/home/agent/repos/CLAUDE.md
     rm -f "$stub"
   fi
 
