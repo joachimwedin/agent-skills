@@ -12,7 +12,8 @@ The user has asked you to teach them something. This is a stateful request - the
 Treat the current directory as a teaching workspace. The state of their learning is captured in this directory in several files:
 
 - `MISSION.md`: A document capturing the _reason_ the user is interested in the topic. This should be used to ground all teaching. Use the format in [MISSION-FORMAT.md](./MISSION-FORMAT.md).
-- `./reference/*.html`: A directory of reference materials. These are the compressed learnings from the lessons - cheat sheets, reference algorithms, syntax, yoga poses, glossaries. They are the raw units of learning. They should be beautiful documents which print out well, and are designed for quick reference.
+- `GLOSSARY.md`: The canonical terminology for this workspace — the compressed, agreed-upon definition of every term the lessons rely on. All lessons, reference documents, and learning records should use its terms. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
+- `./reference/*.html`: A directory of reference materials. These are the compressed learnings from the lessons - cheat sheets, reference algorithms, syntax, yoga poses. They should be beautiful documents which print out well, and are designed for quick reference.
 - `RESOURCES.md`: A list of resources which can be explored to ground your teaching in contextual knowledge, or to acquire knowledge and wisdom. Use the format in [RESOURCES-FORMAT.md](./RESOURCES-FORMAT.md).
 - `./learning-records/*.md`: A directory of learning records, which capture what the user has learned. These are loosely equivalent to architectural decision records in software development - they capture non-obvious lessons and key insights that may need to be revised later, or drive future sessions. These should be used to calculate the zone of proximal development. They are titled `0001-<dash-case-name>.md`, where the number increments each time. Use the format in [LEARNING-RECORD-FORMAT.md](./LEARNING-RECORD-FORMAT.md).
 - `./lessons/*.html`: A directory of lessons. A **lesson** is a single, self-contained HTML output that teaches one tightly-scoped thing tied to the mission. This is the primary unit of teaching in this workspace.
@@ -78,15 +79,11 @@ Failing to understand the mission will mean knowledge acquisition is not grounde
 
 Missions may change as the user develops more skills and knowledge. This is normal - make sure to update the `MISSION.md` and add a learning record to capture the change. Confirm with the user before changing the mission.
 
-## Zone Of Proximal Development
+## Zone of Proximal Development
 
 Each lesson, the user should always feel as if they are being challenged 'just enough'.
 
-The user may specify an exact thing they want to learn. If they don't, figure out their zone of proximal development by:
-
-- Reading their `learning-records`
-- Figuring out the right thing to teach them based on their mission
-- Teach the most relevant thing that fits in their zone of proximal development
+The user may specify an exact thing they want to learn. If they don't, figure out their zone of proximal development by reading their `learning-records` and weighing that against the mission. Then teach the most relevant thing that fits in it.
 
 ## Knowledge
 
@@ -117,11 +114,11 @@ When the user asks a question that appears to require wisdom, your default postu
 
 A community is a place (online or offline) where the user can test their skills in the real world. This might be a forum, a subreddit, a real-world class (budget permitting) or a local interest group.
 
-You should attempt to find high-reputation communities the user can join. If the user expresses a preference that they don't want to join a community, respect it.
+You should attempt to find high-reputation communities the user can join, and record them in the Wisdom section of `RESOURCES.md`. If the user expresses a preference that they don't want to join a community, respect it and record that too.
 
 ## Reference Documents
 
-While creating lessons, you should also create reference documents. Lessons can reference these documents - they are useful for tracking raw units of knowledge useful across lessons.
+While creating lessons, you should also create reference documents. Lessons can reference these documents - they are useful for tracking compressed knowledge shared across lessons.
 
 Lessons will rarely be revisited later - reference documents will be. They should be the compressed essence of the lesson, in a format designed for quick reference.
 
@@ -131,9 +128,8 @@ Some learning topics lend themselves to reference:
 - Algorithms and flowcharts for processes
 - Yoga poses and sequences for yoga
 - Exercises and routines for fitness
-- Glossaries for any topic with its own nomenclature
 
-Glossaries, in particular, are an essential reference. Once one is created, it should be adhered to in every lesson.
+Any topic with its own nomenclature also needs `GLOSSARY.md` — the one canonical, workspace-wide glossary, distinct from these per-topic `./reference/*.html` files. See [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md). Once a term is in it, use it consistently in every lesson.
 
 ## `NOTES.md`
 
