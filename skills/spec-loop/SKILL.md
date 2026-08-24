@@ -29,8 +29,9 @@ with "The driving agent only drives" below:
    - **Zero** matches — report "no open Specs in `<project>`" and end
      the turn. Don't loop back to let the user pick a different
      project; re-invoking `/spec-loop` is cheap.
-   - **Exactly one** — auto-select it, state which one and why, and
-     proceed.
+   - **Exactly one** — state which one and why, and ask the user to
+     confirm before proceeding. On "no", end the turn — don't loop back
+     to project selection; re-invoking `/spec-loop` is cheap.
    - **More than one** — ask the user to pick.
 3. Treat the resolved Spec exactly as if it had been given as the
    argument from the start, and continue below.
