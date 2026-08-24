@@ -8,6 +8,7 @@
 {One or two sentence description of what this context is and why it exists.}
 
 ## Shared glossary
+{Optional — only if this repo shares terms with a wider system. See "Shared glossary across repos" below.}
 
 Cross-cutting terms are defined in [{shared-repo-name}](../{shared-repo-name}/CONTEXT.md). Check there before coining a new term, or if a term seems to span repos rather than belong to this one.
 
@@ -43,8 +44,9 @@ _Avoid_: Client, buyer, account
 # Context Map
 
 ## Shared glossary
+{Optional — only if this repo shares terms with a wider system. See "Shared glossary across repos" below.}
 
-Cross-cutting terms are defined in [{shared-repo-name}](../[shared-repo-name]/CONTEXT.md). Check there before coining a new term, or if a term seems to span repos rather than belong to this one.
+Cross-cutting terms are defined in [{shared-repo-name}](../{shared-repo-name}/CONTEXT.md). Check there before coining a new term, or if a term seems to span repos rather than belong to this one.
 
 ## Contexts
 
@@ -69,8 +71,8 @@ When multiple contexts exist, infer which one the current topic relates to. If u
 
 ## Shared glossary across repos
 
-Independent of single vs. multi-context: a repo whose terms are partly owned by a wider system (several repos, not just this one) can add a `## Shared glossary` section - to its `CONTEXT.md` if single-context, or its `CONTEXT-MAP.md` if not - linking to another repo's `CONTEXT.md` that holds the cross-cutting terms. This is orthogonal to whether the repo itself split into multiple internal contexts.
+Independent of single vs. multi-context: a repo whose terms are partly owned by a wider system (several repos, not just this one) can add a `## Shared glossary` section — to its `CONTEXT.md` if single-context, or its `CONTEXT-MAP.md` if not — linking to another repo's `CONTEXT.md` that holds the cross-cutting terms. This is orthogonal to whether the repo itself split into multiple internal contexts.
 
-This link is the only way the skill looks outside the current repo. Never infer a shared glossary by checking whether a sibling directory happens to exist - only an explicit `## Shared glossary` link makes one repo's terms reachable from another.
+This link is the only way the skill looks outside the current repo. Never infer a shared glossary by checking whether a sibling directory happens to exist — only an explicit `## Shared glossary` link makes one repo's terms reachable from another.
 
-When a term being resolved clearly isn't specific to this repo - other repos independently reference the same concept - prefer adding it to the shared glossary over duplicating it locally.
+When a term being resolved clearly isn't specific to this repo — other repos independently reference the same concept — prefer adding it to the shared glossary over duplicating it locally.

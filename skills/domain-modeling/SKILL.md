@@ -45,7 +45,7 @@ Create files lazily: only when you have something to write. If no `CONTEXT.md` e
 
 When the user uses a term that conflicts with the existing language in `CONTEXT.md`, call it out immediately. "Your glossary defines 'cancellation' as X, but you seem to mean Y. Which is it?"
 
-If `CONTEXT.md` (or `CONTEXT-MAP.md`) has a `## Shared glossary` link, check the linked file too before concluding a term is undefined. When a term being resolved clearly isn't specific to this repo - other repos independently reference the same concept - prefer proposing it for the shared glossary over duplicating it locally. Never check for a shared glossary except via that explicit link; don't guess based on what directories happen to exist alongside the repo.
+If `CONTEXT.md` (or `CONTEXT-MAP.md`) has a `## Shared glossary` link, check the linked file too before concluding a term is undefined. See "Shared glossary across repos" in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md) for when to propose a term there instead of duplicating it locally, and why that link is the only valid way to find one.
 
 ### Sharpen fuzzy language
 
@@ -67,10 +67,4 @@ When a term is resolved, update `CONTEXT.md` right there. Don't batch these up: 
 
 ### Offer ADRs sparingly
 
-Only offer to create an ADR when all three are true:
-
-1. **Hard to reverse**: the cost of changing your mind later is meaningful
-2. **Surprising without context**: a future reader will wonder "why did they do it this way?"
-3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
-
-If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
+Before offering to create an ADR, check it against the three criteria and format in [ADR-FORMAT.md](./ADR-FORMAT.md). If any criterion is missing, skip the ADR.
