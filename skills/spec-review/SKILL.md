@@ -1,14 +1,15 @@
 ---
 name: spec-review
-description: The strict, whole-branch review that closes out a Spec on agent-tickets once every child ticket is done — fix directly, or file new child tickets for anything too large to fix in place, then close or reopen the Spec. Use when spec-pass spawns a subagent because a Spec is sitting in review/.
+description: The strict, whole-branch review that closes out a Spec on agent-tickets once every child ticket is done — fix directly, or file new child tickets for anything too large to fix in place, then close or reopen the Spec. Use when spec-loop spawns a subagent because a Spec is sitting in review/, or to review one specific Spec directly.
 ---
 
 # Spec Review
 
-Runs once a Spec's board shows it sitting in `review/` — `spec-pass`
-spawns a fresh subagent to run this pass rather than running it inline
-itself (see [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md)'s
-"Spec board operations").
+Invoked with a Spec (number or path). Runs once a Spec's board shows it
+sitting in `review/` — `spec-loop` spawns a fresh subagent to run this
+pass rather than running it inline itself (see
+[TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md)'s "Spec board
+operations").
 
 ## Gather context
 
