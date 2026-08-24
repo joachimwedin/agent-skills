@@ -90,7 +90,7 @@ describe("runBoardStep", () => {
 
     const result = runBoardStep(boardDir, 1);
 
-    expect(result.outcome).toEqual({ kind: "claimed", ticketNumber: 2, slug: "add-widget" });
+    expect(result.outcome).toEqual({ kind: "claimed", claims: [{ ticketNumber: 2, slug: "add-widget" }] });
     expect(fs.existsSync(path.join(boardDir, "todo", "2-add-widget.md"))).toBe(false);
     expect(fs.existsSync(path.join(boardDir, "in-progress", "2-add-widget.md"))).toBe(true);
     expect(currentBranchLog(boardDir)).toBe("2: claim — add-widget");
@@ -105,6 +105,40 @@ describe("runBoardStep", () => {
     });
   });
 
+  it("claims every simultaneously-pickable child in one pass, each with its own commit", () => {
+    const boardDir = makeBoardRepo();
+    writeTicket(boardDir, { folder: "in-progress", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
+    writeTicket(boardDir, { folder: "todo", filename: "2-add-widget", parent: "Spec #1" });
+    writeTicket(boardDir, { folder: "todo", filename: "3-add-gadget", parent: "Spec #1" });
+
+    const result = runBoardStep(boardDir, 1);
+
+    expect(result.outcome).toEqual({
+      kind: "claimed",
+      claims: [
+        { ticketNumber: 2, slug: "add-widget" },
+        { ticketNumber: 3, slug: "add-gadget" },
+      ],
+    });
+    expect(fs.existsSync(path.join(boardDir, "in-progress", "2-add-widget.md"))).toBe(true);
+    expect(fs.existsSync(path.join(boardDir, "in-progress", "3-add-gadget.md"))).toBe(true);
+    // Each claimed child gets its own separate commit, using the existing
+    // claim commit-message convention -- most recent first.
+    const messages = git(boardDir, ["log", "--format=%s", "-2"]).trim().split("\n");
+    expect(messages).toEqual(["3: claim — add-gadget", "2: claim — add-widget"]);
+    expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");
+
+    // The board field reflects every claim made during this same call.
+    expect(result.board).toEqual({
+      specNumber: 1,
+      spec: { number: 1, slug: "spec-widget-overhaul", folder: "in-progress", blockedBy: [], flagged: false },
+      children: [
+        { number: 2, slug: "add-widget", folder: "in-progress", blockedBy: [], flagged: false },
+        { number: 3, slug: "add-gadget", folder: "in-progress", blockedBy: [], flagged: false },
+      ],
+    });
+  });
+
   it("moves the Spec itself from todo to in-progress, in its own commit, on the first child claim", () => {
     const boardDir = makeBoardRepo();
     writeTicket(boardDir, { folder: "todo", filename: "1-spec-widget-overhaul", parent: "None — this is the Spec." });
@@ -112,7 +146,7 @@ describe("runBoardStep", () => {
 
     const result = runBoardStep(boardDir, 1);
 
-    expect(result.outcome).toEqual({ kind: "claimed", ticketNumber: 2, slug: "add-widget" });
+    expect(result.outcome).toEqual({ kind: "claimed", claims: [{ ticketNumber: 2, slug: "add-widget" }] });
     const messages = git(boardDir, ["log", "--format=%s", "-2"]).trim().split("\n");
     expect(messages).toEqual(["2: claim — add-widget", "1: start — spec-widget-overhaul"]);
     expect(git(boardDir, ["status", "--porcelain"]).trim()).toBe("");

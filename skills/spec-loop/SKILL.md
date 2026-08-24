@@ -79,12 +79,13 @@ directly; do not re-derive them by reading ticket files yourself.
   ticket text for a `## Flagged` section.
 - Diff this JSON against the immediately preceding snapshot's JSON to
   find every ticket whose `folder` just changed — those are the rows to
-  bold. Usually just one, but a claim on a Spec's first child changes
-  two in the same call: the child's row (`todo` → `in-progress`) and
-  the Spec's own row (`todo` → `in-progress`, per TICKET-FORMAT.md's
-  "Claim") — bold both. Skip the diff on the very first, pre-loop
-  snapshot (from `board-state`); nothing's changed yet, so nothing is
-  bolded.
+  bold. Usually just one, but a single call can change several: a claim
+  on a Spec's first child also moves the Spec's own row (`todo` →
+  `in-progress`, per TICKET-FORMAT.md's "Claim"), and a call that claims
+  several simultaneously-pickable children at once moves every one of
+  their rows too — bold all of them. Skip the diff on the very first,
+  pre-loop snapshot (from `board-state`); nothing's changed yet, so
+  nothing is bolded.
 
 Render every snapshot the same way, narration line first:
 
@@ -131,12 +132,16 @@ Each iteration:
    board yourself to decide — the board snapshot you print is for
    narration only.
 2. Act on its JSON `outcome`:
-   - **`{ "kind": "claimed", "ticketNumber": <n>, "slug": "<slug>" }`**
-     or **`{ "kind": "spec-ready", "ticketNumber": <n>, "slug":
-     "<slug>" }`** — mechanical: the tool already made the change
-     itself. Narrate it directly (e.g. "Claimed child #12, moved it to
-     in-progress/." or "Spec is ready for review, moved it to
-     review/.") — spawn nothing this iteration.
+   - **`{ "kind": "claimed", "claims": [{ "ticketNumber": <n>, "slug":
+     "<slug>" }, ...] }`** or **`{ "kind": "spec-ready", "ticketNumber":
+     <n>, "slug": "<slug>" }`** — mechanical: the tool already made the
+     change itself. `claims` holds every child claimed during this same
+     call — usually one, but every simultaneously-pickable child gets
+     claimed together in a single pass, each with its own move and
+     commit. Narrate it directly (e.g. "Claimed child #12, moved it to
+     in-progress/." for one, "Claimed children #5 and #12, moved them to
+     in-progress/." for several, or "Spec is ready for review, moved it
+     to review/.") — spawn nothing this iteration.
    - **`{ "kind": "dispatch", "ticketNumber": <n>, "mode": "work" |
      "review-child" }`** — spawn a subagent (Agent tool, one at a
      time — never in parallel) instructed to invoke `spec-pass` on

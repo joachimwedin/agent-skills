@@ -85,7 +85,7 @@ describe("board-step CLI", () => {
     const parsed = JSON.parse(stdout);
 
     expect(parsed).toEqual({
-      outcome: { kind: "claimed", ticketNumber: 2, slug: "add-widget" },
+      outcome: { kind: "claimed", claims: [{ ticketNumber: 2, slug: "add-widget" }] },
       board: {
         specNumber: 1,
         spec: { number: 1, slug: "spec-widget-overhaul", folder: "in-progress", blockedBy: [], flagged: false },
