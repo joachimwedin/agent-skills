@@ -109,11 +109,16 @@ shape `to-spec`/`to-tickets` produce.
 
 This whole board — the Priority scan below and the mechanical
 transitions it can trigger — is computed and (where mechanical)
-executed by `agent-tickets/scripts/next-action`, a deterministic tool
+executed by `agent-tickets/scripts/board-step`, a deterministic tool
 taking a Spec (number or path) and returning either what it already
-did, or the ticket/mode a judgment pass needs. `spec-loop` calls it
-every iteration; `spec-pass` never scans a board or reaches this
-decision itself — it's always handed an explicit ticket and mode.
+did, or the ticket/mode a judgment pass needs, together with the
+board's current state. `agent-tickets/scripts/board-state` is its
+read-only counterpart — same Spec argument, same board-state JSON, but
+makes no move and no commit; it's used to render the board for
+narration, never to decide what happens next. `spec-loop` calls
+`board-step` every iteration and `board-state` once before the first;
+`spec-pass` never scans a board or reaches this decision itself — it's
+always handed an explicit ticket and mode.
 
 - **Pickable**: a child ticket in `todo/` with no `## Flagged` section
   and every `## Blocked by` reference already in `done/`.
@@ -143,10 +148,10 @@ decision itself — it's always handed an explicit ticket and mode.
   Spec's board also moves the Spec itself from `todo/` to `in-progress/`,
   one-way and never repeated after — the board then shows work is
   underway even before any child reaches `review/`. Purely mechanical —
-  `next-action` is the sole executor, performing the move and commit
+  `board-step` is the sole executor, performing the move and commit
   itself; no judgment pass is ever spawned for this step.
 - **Spec ready**: once every child is `done/`, move the Spec itself to
-  `review/` and commit. Purely mechanical, same as Claim — `next-action`
+  `review/` and commit. Purely mechanical, same as Claim — `board-step`
   is the sole executor; no judgment pass is spawned for this step
   either.
 - **Work**: carry a child already sitting in `in-progress/` to a
