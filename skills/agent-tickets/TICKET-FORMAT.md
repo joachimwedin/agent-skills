@@ -13,6 +13,12 @@ per project.
 - **Spec file**: `~/repos/agent-tickets/boards/<project>/<n>-spec-<slug>.md`
 - **Child ticket file**: `~/repos/agent-tickets/boards/<project>/<n>-<slug>.md` (no `spec-` prefix)
 
+Keep every ticket's title short — roughly six words — whatever the
+ticket kind: a Spec, a child ticket, or a wayfinder map or decision
+ticket. It's what a human scans when picking work off the frontier,
+and a long title is unwieldy wherever it gets reused (e.g. slugified
+into a branch name by whatever runs the ticket).
+
 ## Kanban folders
 
 Every ticket — Spec or child — moves through the same four folders, all
@@ -25,7 +31,14 @@ under `~/repos/agent-tickets/boards/<project>/`:
 
 ## Ticket template
 
-Every ticket file opens directly with a title, followed by four sections
+This is the body shape for a **child ticket** under a Spec (the kind
+`to-tickets` publishes) — not the Spec itself, whose body follows its
+own template (see `to-spec`), and not a wayfinder map or its decision
+tickets (see "Wayfinding operations" below). Every ticket file,
+whatever its body, still lives under the same kanban folders,
+numbering, and commit rules on this page.
+
+A child ticket opens directly with a title, followed by four sections
 (a fifth, `## Flagged`, only appears once added — see below):
 
 ```
@@ -45,13 +58,10 @@ Spec #<n>
 
 ## Blocked by
 
-- Ticket #<n> (<why>) — or "None - can start immediately"
+- Ticket #<n> (<why>) — or "None — can start immediately"
 ```
 
-Keep `<Title>` short — roughly six words — for both a Spec and a child
-ticket: it's what a human scans when picking work off the frontier, and
-a long title is unwieldy wherever it gets reused (e.g. slugified into a
-branch name by whatever runs the ticket).
+Omit `## Parent` entirely if the ticket has no source Spec.
 
 ## Flagged tickets
 
@@ -129,7 +139,7 @@ always handed an explicit ticket and mode.
   2. The Spec is still `todo/` or `in-progress/` and every child is
      `done/`: the Spec itself is ready for review. (The `todo/` case only
      fires on a manually-edited board — e.g. a child dropped straight
-     into `done/` without ever being claimed. Through normal `spec-pass`
+     into `done/` without ever being claimed. Through normal `board-step`
      operation the Spec is always `in-progress/` by this point, since
      claiming a child now always moves the Spec there first.)
   3. A child already sits in `in-progress/` — it's been claimed but not
@@ -197,12 +207,13 @@ ordinary child tickets, linked and numbered exactly as above.
 - **Resolve**: append the answer under a `## Answer` heading, then move
   the file straight to `done/` — skip `review/`; a decision ticket's
   review already happened live in the conversation that produced the
-  answer. Finally, append a context pointer (the ticket's title and
-  number, plus a one-line gist) to the map's `## Decisions so far`.
+  answer. Finally, append a context pointer (the ticket's title,
+  linked, plus a one-line gist) to the map's `## Decisions so far`.
 - **Out of scope**: when a ticket turns out to sit beyond the
   destination, close it the same way as a resolve — append `## Answer`
   noting it's out of scope (e.g. "Out of scope — see map") and move the
-  file to `done/` — but record the one-line gist on the map's `## Out of
-  scope` section instead of `## Decisions so far`. Every closed ticket
-  ends up in `done/` with an `## Answer` either way; the map is what
-  tells the two apart.
+  file to `done/` — but append the context pointer (the ticket's title,
+  linked, plus a one-line gist and why it's out of scope) to the map's
+  `## Out of scope` section instead of `## Decisions so far`. Every
+  closed ticket ends up in `done/` with an `## Answer` either way; the
+  map is what tells the two apart.
