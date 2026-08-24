@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Runs the landing-module tool -- see src/landing/cli.ts for argument
+# parsing and src/landing/main.ts for the tool itself (landChild).
+# Resolves its own install location independent of the caller's working
+# directory, then runs the CLI directly through the locally installed tsx
+# (no npx, no build step), so the command works from any directory.
+#
+# Lands one finished child ticket's branch onto a Spec's shared base in
+# the project repo: checks out <base-branch>, attempts merging
+# <child-branch> onto it. On a clean merge, enacts the already-decided
+# <fate> against the ticket via board-step's fate-enactment entry point
+# (exactly board-step report's own --fate vocabulary) and prints
+# `{ "kind": "landed", "report": ... }`. On a conflict, below the
+# 3-attempt cap, prints `{ "kind": "needs-resolution", "diff": ...,
+# "attempt": ... }` for a conflict-resolution spec-pass work-mode pass to
+# act on -- call this again with --attempt one higher than the last once
+# that pass reports back. On the capped attempt, abandons inline
+# resolution and instead flags the ticket, recycling it to todo/, printing
+# `{ "kind": "flagged", "report": ... }`.
+#
+# Usage:
+#   land-child <project-repo-dir> <base-branch> <child-branch> <board-dir> <ticket-number> --fate <fate> [--reason "<why>"] [--attempt <n>]
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+exec "$SCRIPT_DIR/node_modules/.bin/tsx" "$SCRIPT_DIR/src/landing/cli.ts" "$@"

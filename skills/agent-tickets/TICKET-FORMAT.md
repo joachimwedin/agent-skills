@@ -129,34 +129,43 @@ commit either way, using the same commit-message conventions
 
 - **Pickable**: a child ticket in `todo/` with no `## Flagged` section
   and every `## Blocked by` reference already in `done/`.
-- **Priority scan**: the single next action for a Spec's board, checked
-  in this order —
-  1. Something already in `review/` — the Spec itself, or a child —
-     outranks everything else.
+- **Priority scan**: every currently-actionable item on a Spec's board
+  at once, checked in this order —
+  1. The Spec *itself* already sitting in `review/` is a hard barrier —
+     outranks everything else, no matter what state any child is in.
+     (A child sitting in `review/` is not this case — see step 3.)
   2. The Spec is still `todo/` or `in-progress/` and every child is
      `done/`: the Spec itself is ready for review. (The `todo/` case only
      fires on a manually-edited board — e.g. a child dropped straight
      into `done/` without ever being claimed. Through normal `spec-pass`
      operation the Spec is always `in-progress/` by this point, since
      claiming a child now always moves the Spec there first.)
-  3. A child already sits in `in-progress/` — it's been claimed but not
-     yet carried to a terminal state: work it.
-  4. A pickable child sits in `todo/`: claim it — the lowest ticket
-     number among every simultaneously pickable child, deterministically,
-     every time. No other priority ordering exists; ticket category
-     (bugfix, infra, tracer bullet, polish, refactor) plays no part.
+  3. Otherwise, the union of every child in `review/` (child review) and
+     every child in `in-progress/` (work) — every one of each, not just
+     one at a time, and no priority ordering between them.
+  4. Every currently-pickable child in `todo/` claims at once — not just
+     the lowest-numbered one; ticket category (bugfix, infra, tracer
+     bullet, polish, refactor) plays no part.
   5. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
      (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
      remaining child is `## Flagged` or has an unresolved
      `## Blocked by`).
+
+  `spec-loop` dispatches every judgment item from step 3 concurrently —
+  a `spec-pass` subagent per child, each in its own isolated project-repo
+  worktree and branch — never one at a time; see its own SKILL.md for
+  the dispatch/landing mechanics. `spec-pass` run directly by a person
+  still only ever handles the one ticket it's told about.
 - **Claim**: move a child ticket to `in-progress/`, commit, and stop —
-  claiming is its own action, separate from the work that follows. At
-  most one child in-progress at a time. The first child claimed on a
-  Spec's board also moves the Spec itself from `todo/` to `in-progress/`,
-  one-way and never repeated after — the board then shows work is
-  underway even before any child reaches `review/`. Purely mechanical —
-  `board-step` is the sole executor, performing the move and commit
-  itself; no judgment pass is ever spawned for this step.
+  claiming is its own action, separate from the work that follows. Every
+  simultaneously-pickable child claims together in one pass, each with
+  its own move and commit — more than one child can sit `in-progress/`
+  at once. The first child claimed on a Spec's board also moves the Spec
+  itself from `todo/` to `in-progress/`, one-way and never repeated
+  after — the board then shows work is underway even before any child
+  reaches `review/`. Purely mechanical — `board-step` is the sole
+  executor, performing the move and commit itself; no judgment pass is
+  ever spawned for this step.
 - **Spec ready**: once every child is `done/`, move the Spec itself to
   `review/` and commit. Purely mechanical, same as Claim — `board-step`
   is the sole executor; no judgment pass is spawned for this step
@@ -212,7 +221,12 @@ commit either way, using the same commit-message conventions
   reopened — spec-widget-overhaul`). Only the tracker move is
   mechanical this way — filing a new child ticket (`spec-review`) and
   any project-repo commits (both skills) still happen directly, per
-  "publish to the tracker" and "Project commits" below.
+  "publish to the tracker" and "Project commits" below. A child fate
+  coming out of `spec-loop`'s own concurrent dispatch is the one
+  exception to calling `board-step report` directly: it's routed
+  through `land-child` instead, which merges that child's branch onto
+  the Spec's base branch first and only then calls this same
+  fate-enactment path — see `spec-loop`'s own SKILL.md, "Landing".
 - **Project commits**: when coding or reviewing changes the *project's*
   own repo (not `agent-tickets`), describe the code decisions only —
   the ticket number and filename are local, ephemeral tracker artifacts
