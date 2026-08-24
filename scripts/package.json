@@ -1,0 +1,19 @@
+{
+  "name": "agent-tickets-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TypeScript tooling owned by agent-skills itself (e.g. the fast-path mechanical board-action tool for Spec boards).",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "files=$(find src test -name '*.ts'); if [ -z \"$files\" ]; then echo 'No .ts files yet -- nothing to typecheck.'; else tsc --noEmit; fi"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "git-ts": "file:../../git-ts"
+  }
+}

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Runs the structured decide-and-act board tool -- see src/boardStep/cli.ts
+# for argument parsing and src/boardStep/main.ts for the tool itself.
+# Resolves its own install location independent of the caller's working
+# directory, then runs the CLI directly through the locally installed tsx
+# (no npx, no build step), so the command works from any directory.
+#
+# Runs the Priority scan and, when the verdict is purely mechanical
+# (claiming a pickable child, or moving a fully-done/ Spec to review/),
+# executes the move and commit directly, using the same commit-message
+# conventions -- printing JSON: the outcome (what it decided or did)
+# together with the board's current state, always read fresh off disk.
+#
+# Usage:
+#   board-step <spec-number> <board-dir>
+#   board-step <path-to-spec-ticket-file>
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+exec "$SCRIPT_DIR/node_modules/.bin/tsx" "$SCRIPT_DIR/src/boardStep/cli.ts" "$@"

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Runs the read-only board-state snapshot tool -- see src/boardState/cli.ts
+# for argument parsing and src/boardState/main.ts for the tool itself.
+# Resolves its own install location independent of the caller's working
+# directory, then runs the CLI directly through the locally installed tsx
+# (no npx, no build step), so the command works from any directory. Prints
+# JSON to stdout; makes no filesystem writes and no git operations.
+#
+# Usage:
+#   board-state <spec-number> <board-dir>
+#   board-state <path-to-spec-ticket-file>
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+
+exec "$SCRIPT_DIR/node_modules/.bin/tsx" "$SCRIPT_DIR/src/boardState/cli.ts" "$@"
