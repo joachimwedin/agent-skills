@@ -78,9 +78,13 @@ directly; do not re-derive them by reading ticket files yourself.
 - `flagged: true` marks a ticket flagged directly — no need to inspect
   ticket text for a `## Flagged` section.
 - Diff this JSON against the immediately preceding snapshot's JSON to
-  find which ticket's `folder` just changed — that's the row to bold.
-  Skip the diff on the very first, pre-loop snapshot (from
-  `board-state`); nothing's changed yet, so nothing is bolded.
+  find every ticket whose `folder` just changed — those are the rows to
+  bold. Usually just one, but a claim on a Spec's first child changes
+  two in the same call: the child's row (`todo` → `in-progress`) and
+  the Spec's own row (`todo` → `in-progress`, per TICKET-FORMAT.md's
+  "Claim") — bold both. Skip the diff on the very first, pre-loop
+  snapshot (from `board-state`); nothing's changed yet, so nothing is
+  bolded.
 
 Render every snapshot the same way, narration line first:
 
@@ -100,7 +104,7 @@ Render every snapshot the same way, narration line first:
   flagged.
 - Append a note to the State cell when relevant — a blocked `todo`
   ticket gets "🔳 todo (needs #5)"; a flagged one gets "🚫 flagged".
-- Bold all three cells of whichever row just changed `folder`.
+- Bold all three cells of every row that just changed `folder`.
 
 ## Loop
 
