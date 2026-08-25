@@ -1,4 +1,4 @@
-# Run Spec — Recovery
+# Recovery
 
 Companion to `SKILL.md`, reached by its pointers. Everything here is
 unhappy-path detail for `run-spec`: what to do when a landing attempt
