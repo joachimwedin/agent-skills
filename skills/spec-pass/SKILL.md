@@ -1,13 +1,13 @@
 ---
 name: spec-pass
-description: Carries one child ticket on a Spec's board to its next terminal state, given an explicit ticket number and mode — `work` (code a child sitting in in-progress/) or `review-child` (resolve a child sitting in review/). Use when spec-loop spawns a subagent for a judgment action, or to work one specific ticket directly.
+description: Carries one child ticket on a Spec's board to its next terminal state, given an explicit ticket number and mode — `work` (code a child sitting in in-progress/) or `review-child` (resolve a child sitting in review/). Use when run-spec spawns a subagent for a judgment action, or to work one specific ticket directly.
 ---
 
 # Spec Pass
 
 Invoked with a ticket number (or path) and a mode: `work` or
 `review-child`. Never scans a Spec's board or decides what's next
-itself, in any context — the caller (`spec-loop`, or a person invoking
+itself, in any context — the caller (`run-spec`, or a person invoking
 this directly) always names the exact ticket and mode. Claiming a
 pickable child and moving a fully-`done/` Spec to `review/` are both
 purely mechanical and are handled entirely by

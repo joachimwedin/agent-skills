@@ -3,7 +3,7 @@ import { parseReportedFate } from "../cli/parseReportedFate.js";
 import { landChild } from "./main.js";
 
 /**
- * The CLI surface `spec-loop`'s driving instructions call to land one
+ * The CLI surface `run-spec`'s driving instructions call to land one
  * finished child's branch through the landing module (`landChild` in
  * `./main.js`) -- the merge onto the Spec's shared base, plus whatever it
  * implies for the ticket's fate -- rather than reimplementing that

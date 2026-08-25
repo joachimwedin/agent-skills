@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
  * End-to-end tests running the actual `land-child` CLI as a subprocess
  * against two real temporary git repos -- matching `boardStep/cli.test.ts`'s
  * and `landing/main.test.ts`'s own style (real git/filesystem state, no
- * mocking). `land-child` is the CLI surface `spec-loop`'s driving
+ * mocking). `land-child` is the CLI surface `run-spec`'s driving
  * instructions call to land one finished child's branch through the
  * landing module (`../../src/landing/main.ts`'s `landChild`) rather than
  * reimplementing its merge-then-report-fate policy in prose.

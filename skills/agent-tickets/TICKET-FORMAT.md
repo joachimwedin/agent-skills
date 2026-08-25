@@ -103,7 +103,7 @@ identifies one file somewhere under `~/repos/agent-tickets/boards/<project>/todo
 
 ## Spec board operations
 
-Used by `spec-pass`, `spec-loop`, and `spec-review`, for an ordinary Spec (no
+Used by `spec-pass`, `run-spec`, and `spec-review`, for an ordinary Spec (no
 `Type: wayfinder-map` line) whose children are build tickets — the
 shape `to-spec`/`to-tickets` produce.
 
@@ -115,7 +115,7 @@ did, or the ticket/mode a judgment pass needs, together with the
 board's current state. `agent-skills/scripts/board-state` is its
 read-only counterpart — same Spec argument, same board-state JSON, but
 makes no move and no commit; it's used to render the board for
-narration, never to decide what happens next. `spec-loop` calls
+narration, never to decide what happens next. `run-spec` calls
 `board-step` every iteration and `board-state` once before the first;
 `spec-pass` never scans a board or reaches this decision itself — it's
 always handed an explicit ticket and mode.
@@ -151,7 +151,7 @@ commit either way, using the same commit-message conventions
      remaining child is `## Flagged` or has an unresolved
      `## Blocked by`).
 
-  `spec-loop` dispatches every judgment item from step 3 concurrently —
+  `run-spec` dispatches every judgment item from step 3 concurrently —
   a `spec-pass` subagent per child, each in its own isolated project-repo
   worktree and branch — never one at a time; see its own SKILL.md for
   the dispatch/landing mechanics. `spec-pass` run directly by a person
@@ -194,7 +194,7 @@ commit either way, using the same commit-message conventions
 - **Report fate**: `spec-pass` (either mode) and `spec-review` never
   run `board-step report` themselves, no matter how mechanical that
   call now is — each only reports the fate it decided back to whoever
-  invoked it (`spec-loop`, or a person running the skill directly).
+  invoked it (`run-spec`, or a person running the skill directly).
   That caller, and only that caller, then runs `board-step report
   <ticket-number> <board-dir> --fate <fate> [--reason "<why>"]`
   (or the self-describing ticket-file-path form) to enact it. Exactly
@@ -223,11 +223,11 @@ commit either way, using the same commit-message conventions
   mechanical this way — filing a new child ticket (`spec-review`) and
   any project-repo commits (both skills) still happen directly, per
   "publish to the tracker" and "Project commits" below. A child fate
-  coming out of `spec-loop`'s own concurrent dispatch is the one
+  coming out of `run-spec`'s own concurrent dispatch is the one
   exception to calling `board-step report` directly: it's routed
   through `land-child` instead, which merges that child's branch onto
   the Spec's base branch first and only then calls this same
-  fate-enactment path — see `spec-loop`'s own SKILL.md, "Landing".
+  fate-enactment path — see `run-spec`'s own SKILL.md, "Landing".
 - **Project commits**: when coding or reviewing changes the *project's*
   own repo (not `agent-tickets`), describe the code decisions only —
   the ticket number and filename are local, ephemeral tracker artifacts

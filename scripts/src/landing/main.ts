@@ -52,7 +52,7 @@ export type LandOutcome =
  * itself" design decision.
  *
  * Checks out `baseBranch` in the project repo at `projectRepoDir` (the
- * single shared checkout `spec-loop`'s orchestrating process alone writes
+ * single shared checkout `run-spec`'s orchestrating process alone writes
  * into -- never a child's own isolated worktree), then attempts merging
  * `childBranch` onto it via `git-ts`'s `attemptMerge`. On a clean result,
  * enacts `fate` -- already decided by the `spec-pass` work pass that
@@ -62,7 +62,7 @@ export type LandOutcome =
  * On a conflicting result, the base is left exactly as it stood before the
  * attempt (per `attemptMerge`'s own contract). Below `MAX_LANDING_ATTEMPTS`
  * (`attempt`, 1-indexed, defaults to a ticket's first try), this reports
- * `needs-resolution` -- for `spec-loop`'s orchestrator to hand the
+ * `needs-resolution` -- for `run-spec`'s orchestrator to hand the
  * conflicting diff to a fresh conflict-resolution `spec-pass` work-mode
  * pass, then call `landChild` again with `attempt + 1` once that pass
  * reports back; each retry re-attempts the merge against whatever
