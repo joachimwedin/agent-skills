@@ -1,6 +1,6 @@
 ---
 name: run-spec
-description: Dispatches every currently-workable child on a Spec's board on agent-tickets at once — never one at a time — as a spec-pass or spec-review subagent whenever the next action needs judgment, calling the fast-path `board-step` tool to drive purely mechanical steps and landing each subagent as it reports back, until the board can't be progressed any further.
+description: Drives a Spec's board on agent-tickets to completion, dispatching spec-pass/spec-review subagents concurrently for every workable child and landing each as it finishes.
 disable-model-invocation: true
 ---
 
