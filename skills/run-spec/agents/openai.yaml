@@ -1,0 +1,5 @@
+interface:
+  display_name: "Run Spec"
+  short_description: "Dispatch a Spec's board to completion via spec-pass"
+policy:
+  allow_implicit_invocation: false

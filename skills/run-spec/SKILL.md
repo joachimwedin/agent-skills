@@ -1,10 +1,10 @@
 ---
-name: spec-loop
-description: Drive a Spec's board on agent-tickets to completion — call the fast-path `board-step` tool every iteration, dispatching a spec-pass or spec-review subagent for every currently-workable child concurrently (never one at a time) whenever the next action needs judgment, landing each as it reports back, until the board can't be progressed any further.
+name: run-spec
+description: Dispatches every currently-workable child on a Spec's board on agent-tickets at once — never one at a time — as a spec-pass or spec-review subagent whenever the next action needs judgment, calling the fast-path `board-step` tool to drive purely mechanical steps and landing each subagent as it reports back, until the board can't be progressed any further.
 disable-model-invocation: true
 ---
 
-# Spec Loop
+# Run Spec
 
 Invoked with a Spec (number or path). Loops
 `agent-skills/scripts/board-step` over that Spec's board — it decides
@@ -31,14 +31,14 @@ with "The driving agent only drives" below:
    happens to have an open Spec.
 2. Within the chosen project, list every Spec file
    (`<n>-spec-<slug>.md`) not currently sitting in `done/`, excluding
-   any with a `Type: wayfinder-map` line — spec-loop has no defined
+   any with a `Type: wayfinder-map` line — run-spec has no defined
    behavior for a wayfinder map.
    - **Zero** matches — report "no open Specs in `<project>`" and end
      the turn. Don't loop back to let the user pick a different
-     project; re-invoking `/spec-loop` is cheap.
+     project; re-invoking `/run-spec` is cheap.
    - **Exactly one** — state which one and why, and ask the user to
      confirm before proceeding. On "no", end the turn — don't loop back
-     to project selection; re-invoking `/spec-loop` is cheap.
+     to project selection; re-invoking `/run-spec` is cheap.
    - **More than one** — ask the user to pick.
 3. Treat the resolved Spec exactly as if it had been given as the
    argument from the start, and continue below.
@@ -86,7 +86,7 @@ judgment involved:
 
 - Running `board-step` itself — both its decide-and-act form and its
   `report` form (enacting a fate a subagent already decided and
-  reported back — see "Loop" below).
+  reported back — see "Run" below).
 - Resolving/creating the Spec's base branch (see "Project repo and
   base branch" above).
 - Creating and removing a child's worktree/branch, and landing a
@@ -128,7 +128,7 @@ project repo's shared checkout, or another child's worktree.
 ## Board snapshot
 
 Rendered from board JSON, never a freehand scan of the kanban folders.
-Before the first loop iteration, call `board-state` once (see "Loop"
+Before the first loop iteration, call `board-state` once (see "Run"
 below) to get that JSON. On every subsequent iteration, render directly
 from the `board` field the same iteration's `board-step` call already
 returned — no separate re-scan step after acting.
@@ -139,12 +139,12 @@ ticket and a `children` array, each ticket carrying `number`, `slug`,
 `blockedBy` (ticket numbers it's still waiting on), and `flagged`
 (whether it carries a `## Flagged` section) — read these fields
 directly; do not re-derive them by reading ticket files yourself. This
-same `children` array, filtered by `folder`, is also how "Loop" below
+same `children` array, filtered by `folder`, is also how "Run" below
 determines exactly which children to dispatch concurrently each round —
 reading it for that purpose is still mechanical, not a judgment call:
 it never overrides what `board-step` itself decided, it only enumerates
 the full set behind the single example ticket `board-step`'s `dispatch`
-outcome names (see "Loop" below).
+outcome names (see "Run" below).
 
 - For every child with `folder: "todo"`, check its `blockedBy` numbers
   against the `folder` of those tickets in the same JSON, and note any
@@ -161,7 +161,7 @@ outcome names (see "Loop" below).
   pre-loop snapshot (from `board-state`); nothing's changed yet, so
   nothing is bolded.
 - Alongside the table, list every ticket currently tracked as **in
-  flight** (see "Loop" below) that this same snapshot doesn't already
+  flight** (see "Run" below) that this same snapshot doesn't already
   show landed — a board's `folder` alone can't distinguish "claimed but
   no subagent running yet" from "a subagent is actively working it," so
   this list is what actually shows concurrency happening.
@@ -186,11 +186,19 @@ In flight: #5 (work), #12 (work)
   flagged.
 - Append a note to the State cell when relevant — a blocked `todo`
   ticket gets "🔳 todo (needs #5)"; a flagged one gets "🚫 flagged"; a
-  standing failure (see "Failure handling" below) gets "⛔ failed twice".
+  standing failure (see [RECOVERY.md](./RECOVERY.md)'s "Failure
+  handling") gets "⛔ failed twice".
 - Bold all three cells of every row that just changed `folder`.
 - Omit the "In flight" line entirely once nothing's in flight.
 
-## Loop
+## Run
+
+Every currently-workable child is dispatched at once — never one at a
+time — for as long as any exist: each loop iteration calls `board-step`
+to find what's newly claimable or in flight, spawns a `spec-pass` or
+`spec-review` subagent for every one of them concurrently, and lands
+each as it reports back, until the board can't be progressed any
+further.
 
 Before doing anything else, resolve the project repo and base branch
 (see above), then call `board-state` once and print its board as the
@@ -213,7 +221,7 @@ them):
   below).
 - **Standing failures**: every child ticket excluded from further
   automatic dispatch this run after two consecutive subagent crashes
-  (see "Failure handling" below).
+  (see RECOVERY.md's "Failure handling").
 
 Each iteration:
 
@@ -240,6 +248,8 @@ Each iteration:
    - `{ "kind": "dispatch-spec-review" }`, `{ "kind": "done" }`, or
      `{ "kind": "blocked", "reason": "<reason>" }` — see "Spec review",
      "Blocked", and "Report" below.
+   - If `board-step` or `board-state` itself errors out with no report
+     at all, see RECOVERY.md's "Consecutive-failure circuit breaker".
 2. **Dispatch, concurrently**: from this same call's fresh `board`
    field, find every child with `folder: "in-progress"` or
    `folder: "review"` that isn't already tracked **in flight** and
@@ -266,9 +276,9 @@ Each iteration:
    immediately, the moment it's found, exactly the same way; it never
    waits for today's in-flight batch to drain first.
 3. **Land what's finished**: as each in-flight subagent reports back
-   (a fate, not a crash — see "Failure handling" below for a crash),
-   handle it immediately, in whatever order reports arrive — never
-   collect several before acting on the first:
+   (a fate, not a crash — see RECOVERY.md's "Failure handling" for a
+   crash), handle it immediately, in whatever order reports arrive —
+   never collect several before acting on the first:
    - Per TICKET-FORMAT.md's "Report fate", it reports `ready-for-
      review`, `flagged` (with a reason), or `done` rather than moving
      or committing anything itself.
@@ -314,51 +324,18 @@ printed JSON's `kind`:
 
 - **`landed`** — the branch merged cleanly and the fate was enacted;
   carries `report` (the same shape as `board-step report`'s own
-  result). Terminal for this landing — proceed as in "Loop" step 3
+  result). Terminal for this landing — proceed as in "Run" step 3
   above.
 - **`needs-resolution`** — the branch conflicts with the base as it
-  stands right now; carries `diff` (what didn't apply) and `attempt`
-  (this call's own 1-indexed try). Spawn a fresh conflict-resolution
-  `spec-pass` **`work`** subagent on the *same* worktree/branch — still
-  tracked **in flight** under this same ticket, not a new entry — handed
-  `diff` and told to resolve it against the base and commit. Once that
-  subagent reports back, call `land-child` again for the same ticket
-  with `--attempt` incremented. Never resolve a conflict yourself, and
-  never merge or report the fate yourself while a resolution is
-  outstanding.
-- **`flagged`** — the cap (3 attempts) was reached; inline resolution
-  is abandoned and the ticket was already recycled to `todo/` with a
+  stands right now. See RECOVERY.md's "Landing conflict retries" for
+  the retry protocol before calling `land-child` again for this ticket.
+- **`flagged`** — inline conflict resolution was abandoned after
+  repeated attempts (see RECOVERY.md's "Landing conflict retries" for
+  the cap) and the ticket was already recycled to `todo/` with a
   `## Flagged` section, carrying `report` the same way `landed` does.
   Terminal — remove the worktree and stop retrying this ticket this
-  run; a future `spec-loop` run picks it up fresh (a new claim, a new
+  run; a future `run-spec` run picks it up fresh (a new claim, a new
   worktree) if it becomes pickable again.
-
-## Failure handling
-
-Distinct from a subagent normally reporting a fate: if a `spec-pass`
-subagent invocation itself errors out with nothing at all reported —
-- **First crash on a ticket**: retry immediately — spawn a fresh
-  subagent on the *same* worktree/branch (so whatever it already
-  committed survives), same mode, still tracked **in flight**. Narrate
-  it (e.g. "Subagent for #9 crashed — retrying once, same worktree.").
-- **Second consecutive crash on the same ticket**: stop retrying it.
-  Remove it from **in flight** and add it to **standing failures**
-  instead — leave its worktree and ticket file exactly where they sit
-  (still `in-progress/` or `review/`); this skill never guesses at a
-  fix. Narrate it as a standing failure and keep going — every other
-  in-flight or newly-actionable child continues unaffected.
-
-This is separate from, and doesn't replace, the existing
-"Consecutive-failure circuit breaker" below, which covers `board-step`/
-`board-state` erroring out instead of a subagent.
-
-If `board-step`'s outcome ever names only standing-failure tickets as
-its `dispatch` example with nothing else in flight and nothing else
-newly-actionable this round (i.e. every remaining actionable child is a
-standing failure), the Spec can't mechanically finish this run — stop
-the loop and report it the same way as "Blocked" below, naming every
-standing-failure ticket as the reason, rather than looping forever
-waiting for a fate that will never come.
 
 ## Spec review
 
@@ -388,26 +365,19 @@ in-progress/"). There's no cap on how many times a Spec can cycle back
 through `spec-review` this way — a reopened Spec's new children flow
 through the same concurrent dispatch loop above.
 
-## Consecutive-failure circuit breaker
-
-If running `board-step` or `board-state` errors out with no report at
-all, retry that same step once immediately (the same command). If the
-retry also errors, stop the loop and report the failure instead of
-continuing. (A spawned subagent crashing is handled separately — see
-"Failure handling" above; it never stops the whole loop by itself.)
-
 ## Blocked
 
 On a `blocked` report — from `board-step` itself, or the standing-
-failure case in "Failure handling" above — first let every still-in-
-flight child finish landing (or crash out to a standing failure) rather
-than stopping mid-flight; once nothing remains in flight, stop.  Do not
-ask the user how to unblock it, do not propose workarounds, and do not
-take any unblocking action yourself (editing a ticket, running a
-command, touching the project repo) — that's a change, and per "The
-driving agent only drives" above, this skill never makes those. Just
-report why, and end the turn. Unblocking is the user's call, made
-outside this skill; re-invoke spec-loop once they've acted.
+failure case in RECOVERY.md's "Failure handling" — first let every
+still-in-flight child finish landing (or crash out to a standing
+failure) rather than stopping mid-flight; once nothing remains in
+flight, stop. Do not ask the user how to unblock it, do not propose
+workarounds, and do not take any unblocking action yourself (editing a
+ticket, running a command, touching the project repo) — that's a
+change, and per "The driving agent only drives" above, this skill never
+makes those. Just report why, and end the turn. Unblocking is the
+user's call, made outside this skill; re-invoke run-spec once they've
+acted.
 
 ## Report
 
