@@ -192,10 +192,11 @@ commit either way, using the same commit-message conventions
   ahead of it) or `done` (fixed everything directly, or found nothing
   to flag) — rather than moving or committing the Spec itself directly.
 - **Report fate**: `spec-pass` (either mode) and `spec-review` never
-  move or commit the ticket they were handed themselves — each reports
-  the fate it decided back to whoever invoked it (`spec-loop`, or a
-  person running the skill directly), which then runs `board-step
-  report <ticket-number> <board-dir> --fate <fate> [--reason "<why>"]`
+  run `board-step report` themselves, no matter how mechanical that
+  call now is — each only reports the fate it decided back to whoever
+  invoked it (`spec-loop`, or a person running the skill directly).
+  That caller, and only that caller, then runs `board-step report
+  <ticket-number> <board-dir> --fate <fate> [--reason "<why>"]`
   (or the self-describing ticket-file-path form) to enact it. Exactly
   three fates exist, shared by every caller above:
   - `ready-for-review` — `in-progress/` → `review/`. Only ever reported

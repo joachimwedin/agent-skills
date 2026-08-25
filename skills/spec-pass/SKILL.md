@@ -15,17 +15,19 @@ purely mechanical and are handled entirely by
 this skill only carries an already-claimed child, or a child already
 sitting in `review/`, to its terminal state per
 [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md)'s "Spec board
-operations". Neither mode moves or commits the ticket into
-`agent-tickets` itself — each reports the fate it decided back to
-whoever invoked it (see "Report fate" in TICKET-FORMAT.md); that caller
-runs `board-step report` to enact it.
+operations". Neither mode ever runs `board-step report` itself, no
+matter how mechanical that call is — each only reports the fate it
+decided back to whoever invoked it (see "Report fate" in
+TICKET-FORMAT.md). Enacting it, by running `board-step report`, is the
+caller's job alone.
 
 ## Mode: `review-child`
 
 The ticket is a child sitting in `review/`. Resolve it per "Spec board
 operations": fix what's missing or approve outright against its
-`## Acceptance criteria`, tick boxes. Report the fate `done` — do not
-move the file or commit into `agent-tickets` yourself.
+`## Acceptance criteria`, tick boxes. Report the fate `done` and stop
+there — do not run `board-step report` yourself, even though you now
+have everything it needs; that call belongs to the caller.
 
 ## Mode: `work`
 
@@ -44,8 +46,9 @@ to a reportable fate in this same pass:
 4. **Commit** to the project's own repo, per TICKET-FORMAT.md's
    "Project commits" — plus files changed and any blockers or notes for
    whoever picks this board up next.
-5. **Decide its fate** — report it, do not move the file or commit into
-   `agent-tickets` yourself:
+5. **Decide its fate** — report it and stop there; do not run
+   `board-step report` yourself, even though you now have everything it
+   needs — that call belongs to the caller:
    - Every `## Acceptance criteria` box checked — report `ready-for-
      review`.
    - Can't finish for reasons outside your control (e.g. a sandbox
