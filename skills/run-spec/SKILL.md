@@ -12,8 +12,8 @@ decides and, whenever the next action is purely mechanical, performs it
 directly, returning the board's current state alongside its verdict.
 Whenever the next action needs judgment, a `spec-pass` or `spec-review`
 subagent is spawned for every currently-workable child at once, each
-in its own isolated project-repo worktree and branch — never one at a
-time — until nothing's left to progress and nothing remains in flight.
+in its own isolated project-repo worktree and branch, until nothing's
+left to progress and nothing remains in flight.
 `agent-skills/scripts/board-state` is `board-step`'s read-only
 counterpart, called once up front to render the board's opening
 snapshot. `agent-skills/scripts/land-child` is the third tool this
@@ -34,12 +34,15 @@ with "The driving agent only drives" below:
    any with a `Type: wayfinder-map` line — run-spec has no defined
    behavior for a wayfinder map.
    - **Zero** matches — report "no open Specs in `<project>`" and end
-     the turn. Don't loop back to let the user pick a different
-     project; re-invoking `/run-spec` is cheap.
+     the turn, without looping back to let the user pick a different
+     project.
    - **Exactly one** — state which one and why, and ask the user to
-     confirm before proceeding. On "no", end the turn — don't loop back
-     to project selection; re-invoking `/run-spec` is cheap.
+     confirm before proceeding. On "no", end the turn, without looping
+     back to project selection.
    - **More than one** — ask the user to pick.
+
+   Either way, nothing here loops back to an earlier choice —
+   re-invoking `/run-spec` is cheap, so the user just runs it again.
 3. Treat the resolved Spec exactly as if it had been given as the
    argument from the start, and continue below.
 
@@ -78,11 +81,9 @@ the whole run:
 
 ## The driving agent only drives
 
-You (the agent running this skill) never make any judgment-driven
-change yourself — not to the tracker, not to the project repo, not a
-single file, ticket move, or commit, at any point during this run, beyond
-these mechanical exceptions, each deterministic by construction — no
-judgment involved:
+You (the agent running this skill) make only these mechanical changes
+yourself, at any point during this run — each deterministic by
+construction, no judgment involved — and nothing else:
 
 - Running `board-step` itself — both its decide-and-act form and its
   `report` form (enacting a fate a subagent already decided and
@@ -99,19 +100,19 @@ judgment involved:
 
 Everything else is: spawning subagents, narrating their reports and the
 tools' own output, printing board snapshots, and — once the run ends —
-stating the final outcome. Every judgment-driven change happens inside
-a spawned subagent's own `spec-pass` or `spec-review` invocation, never
-in this conversation directly — that subagent reports the fate it
-decided rather than moving or committing anything itself
+stating the final outcome. Every judgment-driven change — to the
+tracker, the project repo, a single file, ticket move, or commit —
+happens inside a spawned subagent's own `spec-pass` or `spec-review`
+invocation, never in this conversation directly — that subagent reports
+the fate it decided rather than moving or committing anything itself
 (TICKET-FORMAT.md's "Report fate"). If you notice something that seems
 to need fixing (a miswritten ticket, a premature `## Flagged` section,
-a missing file) do not fix it yourself — say what you noticed when you
-report the outcome, and let the user decide.
+a missing file), say what you noticed when you report the outcome and
+let the user decide, rather than fixing it yourself.
 
 ## No locking, single-writer
 
-No file locks or mutexes are ever introduced. Safety instead comes from
-two invariants this skill must never violate:
+Safety comes from two invariants this skill must never violate:
 
 - This conversation's own orchestrating process is the *only* thing
   that ever writes into the shared `agent-tickets` checkout (whether
@@ -121,9 +122,6 @@ two invariants this skill must never violate:
 - Every genuinely concurrent write — a `spec-pass` subagent's own
   coding — happens inside that child's own isolated worktree, which no
   other subagent or process ever touches.
-
-Never let a spawned subagent write directly into `agent-tickets`, the
-project repo's shared checkout, or another child's worktree.
 
 ## Board snapshot
 
@@ -193,12 +191,12 @@ In flight: #5 (work), #12 (work)
 
 ## Run
 
-Four rules govern dispatch. Each fires the instant its trigger
-condition holds; more than one can fire in the same beat, and none of
-them wait their turn on any other — there's no sequential "next step"
-from one rule to the next. Together they dispatch every currently-
-workable child at once, never one at a time, land each as it reports
-back, and keep firing until the board can't be progressed any further.
+Four rules govern dispatch, named rather than numbered because none of
+them run in sequence: each fires the instant its trigger condition
+holds, more than one can fire in the same beat, and none of them wait
+their turn on any other. Together they dispatch every currently-
+workable child at once, land each as it reports back, and keep firing
+until the board can't be progressed any further.
 
 Before doing anything else, resolve the project repo and base branch
 (see above), then call `board-state` once and print its board as the
@@ -229,7 +227,7 @@ of those yourself, only narrate what it reports. If `board-step` or
 `board-state` itself errors out with no report at all, see RECOVERY.md's
 "Consecutive-failure circuit breaker".
 
-1. **Startup** — run `board-step` for the first time this run:
+- **Startup** — run `board-step` for the first time this run:
 
    ```
    board-step <spec-number> <board-dir>
@@ -258,11 +256,10 @@ of those yourself, only narrate what it reports. If `board-step` or
      it has no memory of this conversation. Add it to **in flight**.
 
    Dispatch every child found this way in the same beat — send every
-   one of this batch's Agent tool calls together (per the Agent tool's
-   own guidance for launching several agents in parallel), not one at a
-   time.
+   one of this batch's Agent tool calls together, per the Agent tool's
+   own guidance for launching several agents in parallel.
 
-2. **On a ticket landing** — as each in-flight subagent reports back (a
+- **On a ticket landing** — as each in-flight subagent reports back (a
    fate, not a crash — see RECOVERY.md's "Failure handling" for a
    crash), handle it immediately, in whatever order reports arrive —
    never collect several before acting on the first:
@@ -295,23 +292,23 @@ of those yourself, only narrate what it reports. If `board-step` or
    because this landing satisfied its `blockedBy`) or `folder:
    "review"` (just moved there by this landing) that isn't already
    tracked **in flight** and isn't a **standing failure**. Every child
-   found is dispatched in the same beat — sent together, not one at a
-   time — and never waits for any other still-in-flight child to
-   finish first: a child found dispatchable because of a later landing
-   is dispatched immediately, the moment it's found, exactly the same
-   way.
+   found is dispatched in the same beat — sent together — and never
+   waits for any other still-in-flight child to finish first: a child
+   found dispatchable because of a later landing is dispatched
+   immediately, the moment it's found, exactly the same way.
 
-3. **On every child reaching `done/`** — `board-step` reports
+- **On every child reaching `done/`** — `board-step` reports
    `{ "kind": "spec-ready", ... }`, narrated as "Spec is ready for
    review, moved it to review/." (this can only happen once nothing is
    in flight, since every child must be `done/` first). This is
    followed by `{ "kind": "dispatch-spec-review" }`: spawn a
    `spec-review` subagent for the Spec itself (see "Spec review"
    below). A `spec-review` reporting `flagged` (new children filed) is
-   not a separate rule — it is just rules 1 and 2 above firing again
-   once those new children exist on the board.
+   not a separate rule — it is just the Startup and On-a-ticket-landing
+   rules above firing again once those new children exist on the
+   board.
 
-4. **Terminal** — once nothing is left to dispatch and nothing remains
+- **Terminal** — once nothing is left to dispatch and nothing remains
    **in flight**, the run ends. `board-step` reports either
    `{ "kind": "done" }` — the Spec reached `done/` — or
    `{ "kind": "blocked", "reason": "<reason>" }` — say why, naming any
@@ -341,8 +338,8 @@ printed JSON's `kind`:
 
 - **`landed`** — the branch merged cleanly and the fate was enacted;
   carries `report` (the same shape as `board-step report`'s own
-  result). Terminal for this landing — proceed as in "Run" rule 2
-  above.
+  result). Terminal for this landing — proceed as in Run's "On a ticket
+  landing" rule above.
 - **`needs-resolution`** — the branch conflicts with the base as it
   stands right now. See RECOVERY.md's "Landing conflict retries" for
   the retry protocol before calling `land-child` again for this ticket.
@@ -388,13 +385,13 @@ On a `blocked` report — from `board-step` itself, or the standing-
 failure case in RECOVERY.md's "Failure handling" — first let every
 still-in-flight child finish landing (or crash out to a standing
 failure) rather than stopping mid-flight; once nothing remains in
-flight, stop. Do not ask the user how to unblock it, do not propose
-workarounds, and do not take any unblocking action yourself (editing a
-ticket, running a command, touching the project repo) — that's a
-change, and per "The driving agent only drives" above, this skill never
-makes those. Just report why, and end the turn. Unblocking is the
-user's call, made outside this skill; re-invoke run-spec once they've
-acted.
+flight, report why and end the turn. Unblocking is the user's call,
+made outside this skill: this skill only reports the reason — it never
+asks the user how to unblock it, proposes workarounds, or takes any
+unblocking action itself (editing a ticket, running a command, touching
+the project repo), since that would be a change, and per "The driving
+agent only drives" above this skill never makes those. Re-invoke
+run-spec once the user has acted.
 
 ## Report
 
