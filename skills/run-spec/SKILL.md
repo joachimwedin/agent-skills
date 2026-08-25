@@ -6,18 +6,18 @@ disable-model-invocation: true
 
 # Run Spec
 
-Invoked with a Spec (number or path). Loops
-`agent-skills/scripts/board-step` over that Spec's board — it decides
-and, whenever the next action is purely mechanical, performs it
+Invoked with a Spec (number or path). Drives
+`agent-skills/scripts/board-step` against that Spec's board — it
+decides and, whenever the next action is purely mechanical, performs it
 directly, returning the board's current state alongside its verdict.
 Whenever the next action needs judgment, a `spec-pass` or `spec-review`
 subagent is spawned for every currently-workable child at once, each
 in its own isolated project-repo worktree and branch — never one at a
 time — until nothing's left to progress and nothing remains in flight.
 `agent-skills/scripts/board-state` is `board-step`'s read-only
-counterpart, called once before the loop starts to render the board's
-opening snapshot. `agent-skills/scripts/land-child` is the third tool
-this skill drives — see "Landing" below.
+counterpart, called once up front to render the board's opening
+snapshot. `agent-skills/scripts/land-child` is the third tool this
+skill drives — see "Landing" below.
 
 ## No Spec given
 
@@ -47,7 +47,7 @@ with "The driving agent only drives" below:
 
 Every child's work happens in the *project's* own repo, never in
 `agent-tickets` itself (see "No locking, single-writer" below). Resolve
-both of these once, before the first loop iteration, and hold them for
+both of these once, before anything else happens, and hold them for
 the whole run:
 
 - **Project repo directory**: `~/repos/<project>`, where `<project>` is
@@ -80,7 +80,7 @@ the whole run:
 
 You (the agent running this skill) never make any judgment-driven
 change yourself — not to the tracker, not to the project repo, not a
-single file, ticket move, or commit, at any point in the loop, beyond
+single file, ticket move, or commit, at any point during this run, beyond
 these mechanical exceptions, each deterministic by construction — no
 judgment involved:
 
@@ -98,7 +98,7 @@ judgment involved:
   drives still holds, extended to cover landing" decision).
 
 Everything else is: spawning subagents, narrating their reports and the
-tools' own output, printing board snapshots, and — when the loop ends —
+tools' own output, printing board snapshots, and — once the run ends —
 stating the final outcome. Every judgment-driven change happens inside
 a spawned subagent's own `spec-pass` or `spec-review` invocation, never
 in this conversation directly — that subagent reports the fate it
@@ -128,10 +128,10 @@ project repo's shared checkout, or another child's worktree.
 ## Board snapshot
 
 Rendered from board JSON, never a freehand scan of the kanban folders.
-Before the first loop iteration, call `board-state` once (see "Run"
-below) to get that JSON. On every subsequent iteration, render directly
-from the `board` field the same iteration's `board-step` call already
-returned — no separate re-scan step after acting.
+Before anything else happens, call `board-state` once (see "Run" below)
+to get that JSON. After that, render directly from the `board` field
+the same `board-step` call just returned — no separate re-scan step
+after acting.
 
 Either tool's JSON has the same shape for this purpose: a `spec`
 ticket and a `children` array, each ticket carrying `number`, `slug`,
@@ -157,9 +157,9 @@ outcome names (see "Run" below).
   on a Spec's first child also moves the Spec's own row (`todo` →
   `in-progress`, per TICKET-FORMAT.md's "Claim"), and a call that claims
   several simultaneously-pickable children at once moves every one of
-  their rows too — bold all of them. Skip the diff on the very first,
-  pre-loop snapshot (from `board-state`); nothing's changed yet, so
-  nothing is bolded.
+  their rows too — bold all of them. Skip the diff on the very first
+  snapshot (from `board-state`, before anything else has run yet);
+  nothing's changed yet, so nothing is bolded.
 - Alongside the table, list every ticket currently tracked as **in
   flight** (see "Run" below) that this same snapshot doesn't already
   show landed — a board's `folder` alone can't distinguish "claimed but
@@ -193,12 +193,12 @@ In flight: #5 (work), #12 (work)
 
 ## Run
 
-Every currently-workable child is dispatched at once — never one at a
-time — for as long as any exist: each loop iteration calls `board-step`
-to find what's newly claimable or in flight, spawns a `spec-pass` or
-`spec-review` subagent for every one of them concurrently, and lands
-each as it reports back, until the board can't be progressed any
-further.
+Four rules govern dispatch. Each fires the instant its trigger
+condition holds; more than one can fire in the same beat, and none of
+them wait their turn on any other — there's no sequential "next step"
+from one rule to the next. Together they dispatch every currently-
+workable child at once, never one at a time, land each as it reports
+back, and keep firing until the board can't be progressed any further.
 
 Before doing anything else, resolve the project repo and base branch
 (see above), then call `board-state` once and print its board as the
@@ -210,11 +210,10 @@ board-state <spec-number> <board-dir>
 board-state <path-to-spec-ticket-file>
 ```
 
-Hold two pieces of state across every iteration for the rest of this
-run (in this conversation only — nothing written to disk represents
-them):
+Hold two pieces of state for the rest of this run (in this conversation
+only — nothing written to disk represents them):
 
-- **In flight**: every child ticket currently has a `spec-pass`
+- **In flight**: every child ticket that currently has a `spec-pass`
   subagent dispatched and not yet landed or given up on, each carrying
   its worktree path, branch name, dispatched mode (`work` or
   `review-child`), and its landing `attempt` counter (see "Landing"
@@ -223,41 +222,32 @@ them):
   automatic dispatch this run after two consecutive subagent crashes
   (see RECOVERY.md's "Failure handling").
 
-Each iteration:
+`board-step` is the sole source of truth for every *mechanical* action
+(claiming, Spec-ready) and for the run's own terminal/hard-barrier
+outcomes (`done`, `blocked`, `dispatch-spec-review`) — never decide any
+of those yourself, only narrate what it reports. If `board-step` or
+`board-state` itself errors out with no report at all, see RECOVERY.md's
+"Consecutive-failure circuit breaker".
 
-1. Run `board-step` against this Spec, in the same two invocation forms
-   as `board-state` above:
+1. **Startup** — run `board-step` for the first time this run:
 
    ```
    board-step <spec-number> <board-dir>
    board-step <path-to-spec-ticket-file>
    ```
 
-   It's still the sole source of truth for every *mechanical* action
-   (claiming, Spec-ready) and for the loop's own terminal/hard-barrier
-   outcomes (`done`, `blocked`, `dispatch-spec-review`) — never decide
-   any of those yourself. Narrate its outcome directly:
-   - `{ "kind": "claimed", "claims": [...] }` — "Claimed child(ren)
-     #<n>[, #<m>, ...], moved them to in-progress/."
-   - `{ "kind": "spec-ready", ... }` — "Spec is ready for review, moved
-     it to review/." (this can only happen once nothing is in flight —
-     see "Dispatch, concurrently" below.)
-   - `{ "kind": "dispatch", ... }` — at least one child needs a
-     judgment pass; the exact set to dispatch is derived below, not
-     from this single ticket number.
-   - `{ "kind": "dispatch-spec-review" }`, `{ "kind": "done" }`, or
-     `{ "kind": "blocked", "reason": "<reason>" }` — see "Spec review",
-     "Blocked", and "Report" below.
-   - If `board-step` or `board-state` itself errors out with no report
-     at all, see RECOVERY.md's "Consecutive-failure circuit breaker".
-2. **Dispatch, concurrently**: from this same call's fresh `board`
-   field, find every child with `folder: "in-progress"` or
-   `folder: "review"` that isn't already tracked **in flight** and
-   isn't a **standing failure**. For each one found:
-   - If it doesn't already have a worktree/branch recorded from earlier
-     this run (a child moving from its `work` pass into a later
-     `review-child` pass keeps the same one), create one off the
-     current base branch:
+   For every child with `folder: "todo"` and no outstanding
+   `blockedBy`, it claims it — a `{ "kind": "claimed", "claims": [...]
+   }` result narrated as "Claimed child(ren) #<n>[, #<m>, ...], moved
+   them to in-progress/."; otherwise, if nothing needed claiming but a
+   child still needs dispatching, it reports `{ "kind": "dispatch",
+   ... }`, naming just one example ticket. Either way, dispatch a
+   subagent for every child this same call's fresh `board` field now
+   shows with `folder: "in-progress"` or `folder: "review"` — every one
+   just claimed above, plus any already sitting there from before this
+   run began (resuming an interrupted run) — all at once:
+   - If a child doesn't already have a worktree/branch recorded from
+     earlier this run, create one off the current base branch:
 
      ```
      git -C <project-repo-dir> worktree add -b spec-<n>-<ticket>-<slug> <project-repo-dir>/.worktrees/spec-<n>-<ticket>-<slug> <spec-branch>
@@ -268,15 +258,12 @@ Each iteration:
      it has no memory of this conversation. Add it to **in flight**.
 
    Dispatch every child found this way in the same beat — send every
-   one of this round's Agent tool calls together (per the Agent tool's
+   one of this batch's Agent tool calls together (per the Agent tool's
    own guidance for launching several agents in parallel), not one at a
-   time. Do not wait for any of them, or for any other still-in-flight
-   child, to finish before continuing — a newly-claimed or newly-
-   unblocked child found on a *later* iteration is dispatched
-   immediately, the moment it's found, exactly the same way; it never
-   waits for today's in-flight batch to drain first.
-3. **Land what's finished**: as each in-flight subagent reports back
-   (a fate, not a crash — see RECOVERY.md's "Failure handling" for a
+   time.
+
+2. **On a ticket landing** — as each in-flight subagent reports back (a
+   fate, not a crash — see RECOVERY.md's "Failure handling" for a
    crash), handle it immediately, in whatever order reports arrive —
    never collect several before acting on the first:
    - Per TICKET-FORMAT.md's "Report fate", it reports `ready-for-
@@ -299,12 +286,42 @@ Each iteration:
      "Landed #12 onto spec-1-concurrent-spec-pass-dispatch, reported
      ready-for-review — moved it to review/.", "Resolved #9 in review,
      reported done — landed and moved it to done/.").
-4. Render the board snapshot from the most recent `board-step` call's
-   `board` field, per "Board snapshot" above, alongside the current
-   **in flight** list — no separate re-scan step.
-5. Unless this iteration's `board-step` outcome was `done` or
-   `blocked` (with nothing in flight — see "Blocked" below), repeat
-   from 1.
+
+   This landing changes the board, so run `board-step` again the same
+   way Startup does, and re-check its fresh `board` field: a `claimed`
+   result narrates the same way as in Startup, and — the same way as
+   Startup, worktree creation included — dispatch a fresh subagent for
+   every child now sitting in `folder: "in-progress"` (newly unblocked
+   because this landing satisfied its `blockedBy`) or `folder:
+   "review"` (just moved there by this landing) that isn't already
+   tracked **in flight** and isn't a **standing failure**. Every child
+   found is dispatched in the same beat — sent together, not one at a
+   time — and never waits for any other still-in-flight child to
+   finish first: a child found dispatchable because of a later landing
+   is dispatched immediately, the moment it's found, exactly the same
+   way.
+
+3. **On every child reaching `done/`** — `board-step` reports
+   `{ "kind": "spec-ready", ... }`, narrated as "Spec is ready for
+   review, moved it to review/." (this can only happen once nothing is
+   in flight, since every child must be `done/` first). This is
+   followed by `{ "kind": "dispatch-spec-review" }`: spawn a
+   `spec-review` subagent for the Spec itself (see "Spec review"
+   below). A `spec-review` reporting `flagged` (new children filed) is
+   not a separate rule — it is just rules 1 and 2 above firing again
+   once those new children exist on the board.
+
+4. **Terminal** — once nothing is left to dispatch and nothing remains
+   **in flight**, the run ends. `board-step` reports either
+   `{ "kind": "done" }` — the Spec reached `done/` — or
+   `{ "kind": "blocked", "reason": "<reason>" }` — say why, naming any
+   standing failures (see RECOVERY.md and "Blocked" below for the
+   standing-failure rule itself).
+
+After any claim, dispatch, or landing above, render the board snapshot
+from the most recent `board-step` call's `board` field, per "Board
+snapshot" above, alongside the current **in flight** list — no separate
+re-scan step.
 
 ## Landing
 
@@ -324,7 +341,7 @@ printed JSON's `kind`:
 
 - **`landed`** — the branch merged cleanly and the fate was enacted;
   carries `report` (the same shape as `board-step report`'s own
-  result). Terminal for this landing — proceed as in "Run" step 3
+  result). Terminal for this landing — proceed as in "Run" rule 2
   above.
 - **`needs-resolution`** — the branch conflicts with the base as it
   stands right now. See RECOVERY.md's "Landing conflict retries" for
@@ -344,8 +361,8 @@ once the Spec itself sits in `review/`, which per its own Priority scan
 only happens once every child is `done/` — by construction, **in
 flight** is already empty by then. Confirm it's empty anyway before
 dispatching (this run's own bookkeeping, not a second judgment call);
-if it somehow isn't, treat this iteration as still having work to
-finish first and don't dispatch `spec-review` yet.
+if it somehow isn't, treat this as still having work to finish first
+and don't dispatch `spec-review` yet.
 
 Once confirmed, spawn a subagent instructed to run `spec-review` on
 this Spec directly (not through `spec-pass` — that skill no longer
@@ -363,7 +380,7 @@ Narrate both the review's outcome and the resulting move (e.g. "ran
 spec-review — reopened with 2 new child tickets, moved back to
 in-progress/"). There's no cap on how many times a Spec can cycle back
 through `spec-review` this way — a reopened Spec's new children flow
-through the same concurrent dispatch loop above.
+through the same concurrent dispatch rules above.
 
 ## Blocked
 
