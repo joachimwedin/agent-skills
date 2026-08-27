@@ -1,7 +1,7 @@
 # Ticket Format
 
 Tickets live as markdown files in `~/repos/agent-tickets/` — a dedicated
-local git repo, not inside any consuming project's own checkout. It
+local directory, not inside any consuming project's own repo. It
 represents "the issue tracker" as a single shared concept; each project
 that uses it gets its own subfolder underneath, named after that
 project's own slug (match whatever's already there, or pick a fresh one
@@ -73,26 +73,13 @@ only work is adding, removing, or updating a dependency.
 Either way, a flagged ticket is excluded from pickup until a human
 deletes the section.
 
-## Commit on every transition
-
-`agent-tickets` is a real git repo specifically so its history doubles
-as an audit trail. Every state change to a ticket — creation, a move
-between kanban folders, appending an answer or a `## Flagged` section —
-gets its own commit in that repo, made as part of the same step that
-changes the file. A commit message names the ticket and the transition,
-e.g. `12: claim — add-dark-mode-toggle` or `7: done — trim-cache-ttl`.
-Commit each ticket's transition separately, even across multiple
-tickets moved in the same session. This covers every file the
-Wayfinding operations below touch too, including an edit to the map
-itself (e.g. appending to its Decisions so far).
-
 ## When a skill says "publish to the tracker"
 
 Create a new file under `~/repos/agent-tickets/boards/<project>/todo/`,
-following the Spec/Child ticket file pattern and Ticket template above,
-and commit it. `<n>` continues the project's existing shared ticket
-sequence — check across all four kanban folders for the highest number
-in use, or start at 1 if none exist yet.
+following the Spec/Child ticket file pattern and Ticket template above.
+`<n>` continues the project's existing shared ticket sequence — check
+across all four kanban folders for the highest number in use, or start
+at 1 if none exist yet.
 
 ## When a skill says "fetch the relevant ticket"
 
@@ -109,60 +96,103 @@ shape `to-spec`/`to-tickets` produce.
 
 This whole board — the Priority scan below and the mechanical
 transitions it can trigger — is computed and (where mechanical)
-executed by `agent-tickets/scripts/next-action`, a deterministic tool
-taking a Spec (number or path) and returning either what it already
-did, or the ticket/mode a judgment pass needs. `spec-loop` calls it
-every iteration; `spec-pass` never scans a board or reaches this
-decision itself — it's always handed an explicit ticket and mode.
+executed directly by `spec-loop`, scanning the four kanban folders
+itself; no separate tool is involved. `spec-loop` re-scans after every
+claim and every landing; `spec-pass` never scans a board or reaches
+this decision itself — it's always handed an explicit ticket and mode.
 
 - **Pickable**: a child ticket in `todo/` with no `## Flagged` section
   and every `## Blocked by` reference already in `done/`.
-- **Priority scan**: the single next action for a Spec's board, checked
-  in this order —
-  1. Something already in `review/` — the Spec itself, or a child —
-     outranks everything else.
+- **Priority scan**: every currently-actionable item on a Spec's board
+  at once, checked in this order —
+  1. The Spec *itself* already sitting in `review/` is a hard barrier —
+     outranks everything else, no matter what state any child is in.
+     (A child sitting in `review/` is not this case — see step 3.)
   2. The Spec is still `todo/` or `in-progress/` and every child is
      `done/`: the Spec itself is ready for review. (The `todo/` case only
      fires on a manually-edited board — e.g. a child dropped straight
      into `done/` without ever being claimed. Through normal `spec-pass`
      operation the Spec is always `in-progress/` by this point, since
      claiming a child now always moves the Spec there first.)
-  3. A child already sits in `in-progress/` — it's been claimed but not
-     yet carried to a terminal state: work it.
-  4. A pickable child sits in `todo/`: claim it — the lowest ticket
-     number among every simultaneously pickable child, deterministically,
-     every time. No other priority ordering exists; ticket category
-     (bugfix, infra, tracer bullet, polish, refactor) plays no part.
+  3. Otherwise, the union of every child in `review/` (child review) and
+     every child in `in-progress/` (work) — every one of each, not just
+     one at a time, and no priority ordering between them.
+  4. Every currently-pickable child in `todo/` claims at once — not just
+     the lowest-numbered one; ticket category (bugfix, infra, tracer
+     bullet, polish, refactor) plays no part.
   5. Otherwise the Spec is `done` (it has reached `done/`) or `blocked`
      (still `todo/`/`in-progress/` with nothing pickable — e.g. the only
      remaining child is `## Flagged` or has an unresolved
      `## Blocked by`).
-- **Claim**: move a child ticket to `in-progress/`, commit, and stop —
-  claiming is its own action, separate from the work that follows. At
-  most one child in-progress at a time. The first child claimed on a
-  Spec's board also moves the Spec itself from `todo/` to `in-progress/`,
-  one-way and never repeated after — the board then shows work is
-  underway even before any child reaches `review/`. Purely mechanical —
-  `next-action` is the sole executor, performing the move and commit
-  itself; no judgment pass is ever spawned for this step.
+
+  `spec-loop` dispatches every judgment item from step 3 concurrently —
+  a `spec-pass` subagent per child, each in its own isolated project-repo
+  worktree and branch — never one at a time; see its own SKILL.md for
+  the dispatch/landing mechanics. `spec-pass` run directly by a person
+  still only ever handles the one ticket it's told about.
+- **Claim**: move a child ticket to `in-progress/` and stop — claiming
+  is its own action, separate from the work that follows. Every
+  simultaneously-pickable child claims together in one pass, each with
+  its own move — more than one child can sit `in-progress/` at once. The
+  first child claimed on a Spec's board also moves the Spec itself from
+  `todo/` to `in-progress/`, one-way and never repeated after — the
+  board then shows work is underway even before any child reaches
+  `review/`. Purely mechanical — `spec-loop` performs the move directly,
+  as a plain file move; no judgment pass is ever spawned for this step.
 - **Spec ready**: once every child is `done/`, move the Spec itself to
-  `review/` and commit. Purely mechanical, same as Claim — `next-action`
-  is the sole executor; no judgment pass is spawned for this step
-  either.
+  `review/`. Purely mechanical, same as Claim — `spec-loop` performs the
+  move directly; no judgment pass is spawned for this step either.
 - **Work**: carry a child already sitting in `in-progress/` to a
-  terminal state — `review/` once done, or back to `todo/` with a
-  `## Flagged` section if it can't be finished. A judgment pass
-  (`spec-pass`, mode `work`) is always spawned with this exact ticket
-  named, never left to rediscover it.
+  terminal state — ready for `review/` once done, or flagged and headed
+  back to `todo/` with a `## Flagged` section if it can't be finished
+  — then report that fate (see "Report fate" below) rather than moving
+  it directly. A judgment pass (`spec-pass`, mode `work`) is always
+  spawned with this exact ticket named, never left to rediscover it.
 - **Child review**: decide the child's fate against its own
   `## Acceptance criteria` — fix what's missing or approve outright,
-  tick any boxes that now reflect reality, then move it to `done/`. A
-  child's review always ends at `done/`, never back for more coding. A
-  judgment pass (`spec-pass`, mode `review-child`) is always spawned
-  with this exact ticket named.
+  tick any boxes that now reflect reality — then report it `done`
+  rather than moving it directly. A child's review always ends at
+  `done/`, never back for more coding. A judgment pass (`spec-pass`,
+  mode `review-child`) is always spawned with this exact ticket named.
 - **Spec review**: when the item sitting in `review/` is the Spec
   itself, that's `spec-review`'s job, not an ordinary child review — a
-  `spec-review` pass is spawned directly, not through `spec-pass`.
+  `spec-review` pass is spawned directly, not through `spec-pass`. It
+  reports the Spec's own fate the same way a child does — `flagged`
+  (filed one or more new child tickets; the Spec still has more work
+  ahead of it) or `done` (fixed everything directly, or found nothing
+  to flag) — rather than moving the Spec itself directly.
+- **Report fate**: `spec-pass` (either mode) and `spec-review` never
+  move a ticket into `agent-tickets` themselves, no matter how
+  mechanical that move now is — each only reports the fate it decided
+  back to whoever invoked it (`spec-loop`, or a person running the
+  skill directly). That caller, and only that caller, then performs the
+  move the fate implies — a plain file move. Exactly three fates
+  exist, shared by every caller above:
+  - `ready-for-review` — `in-progress/` → `review/`. Only ever reported
+    for a child (`spec-pass`, `work` mode, finished); never for the
+    Spec itself, whose own review-readiness is already fully mechanical
+    (see "Spec ready" above).
+  - `flagged` — more work remains before this ticket can close out.
+    For a child (`spec-pass`, `work` mode, blocked) that's
+    `in-progress/` → `todo/` plus an appended `## Flagged` section
+    explaining why — a reason is required. For the Spec itself
+    (`spec-review`, having filed new child tickets rather than fixing
+    everything in place) that's `review/` → `in-progress/` instead —
+    no `## Flagged` section is appended (Specs don't carry one; the new
+    child tickets already represent the outstanding work).
+  - `done` — `review/` → `done/`. Reported by a child (`spec-pass`,
+    `review-child` mode, approved) and by the Spec itself
+    (`spec-review`, nothing left to fix or file) alike.
+
+  Only the tracker move is mechanical this way — filing a new child
+  ticket (`spec-review`) and any project-repo commits (both skills)
+  still happen directly, per "publish to the tracker" and "Project
+  commits" below. A child fate coming out of `spec-loop`'s own
+  concurrent dispatch is the one exception to enacting it directly the
+  moment it's reported: it's routed through "Landing" instead, which
+  merges that child's branch onto the Spec's base branch first and only
+  then applies this same move — see `spec-loop`'s own SKILL.md,
+  "Landing".
 - **Project commits**: when coding or reviewing changes the *project's*
   own repo (not `agent-tickets`), describe the code decisions only —
   the ticket number and filename are local, ephemeral tracker artifacts

@@ -1,6 +1,6 @@
 ---
 name: agent-tickets-setup
-description: Bootstrap the local agent-tickets git repo — the shared issue tracker AI agents use for specs and tickets across your projects. Runs once per machine.
+description: Bootstrap the local agent-tickets directory — the shared issue tracker AI agents use for specs and tickets across your projects. Runs once per machine.
 disable-model-invocation: true
 ---
 
@@ -8,16 +8,16 @@ disable-model-invocation: true
 
 An individual project doesn't need its own setup step — it just gets a
 subfolder inside `agent-tickets` the first time a ticket is published to
-it. This skill only handles the repo itself, once, machine-wide.
+it. This skill only handles the directory itself, once, machine-wide.
 
-## 1. Check for an existing repo
+## 1. Check for an existing directory
 
-If `~/repos/agent-tickets` already exists and is a git repo, tell the
-user it's already set up and stop.
+If `~/repos/agent-tickets` already exists, tell the user it's already
+set up and stop.
 
-## 2. Create the repo
+## 2. Create the directory
 
-`git init` at `~/repos/agent-tickets`, then commit a `README.md`:
+Create `~/repos/agent-tickets`, then write a `README.md` into it:
 
 ```md
 # agent-tickets

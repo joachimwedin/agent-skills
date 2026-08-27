@@ -37,7 +37,15 @@ the tracker".
 
 ## Decide the Spec's fate
 
-- Filed any new child tickets — move the Spec from `review/` back to
-  `in-progress/`, commit. Its board still has more work to do.
+Report the fate, per TICKET-FORMAT.md's "Report fate" — do not move the
+Spec's file into `agent-tickets` yourself; the caller (`spec-loop`, or
+a person running this skill directly) performs the move to enact
+whichever fate you report:
+
+- Filed any new child tickets — report `flagged`, with the reason
+  naming what was filed. Its board still has more work to do; the
+  caller moves the Spec from `review/` back to `in-progress/` on your
+  behalf (no `## Flagged` section is appended to the Spec itself).
 - Otherwise — fixed things directly with no new tickets filed, or found
-  nothing to flag — move the Spec from `review/` to `done/`, commit.
+  nothing to flag — report `done`. The caller moves the Spec from
+  `review/` to `done/` on your behalf.
