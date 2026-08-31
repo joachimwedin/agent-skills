@@ -8,7 +8,6 @@ description: Build and sharpen a project's domain model. Use when discussing cod
 Actively build and sharpen the project's domain model as you design. This is the *active* discipline: challenging terms, inventing edge-case scenarios, and writing the glossary and decisions down the moment they crystallise. (Merely *reading* `CONTEXT.md` for vocabulary is not this skill: that's a one-line habit any skill can do. This skill is for when you're changing the model, not just consuming it.)
 
 ## File structure
-
 Most repos have a single context:
 
 ```
@@ -59,9 +58,17 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
+### Capture unprompted discoveries
+
+Every trigger above reacts to something the user said. Research you run for your own reasons, a subagent digging through the code base, a grep to answer your own question, surfaces facts nobody made a claim about, and those are just as capturable. Judge them against the bars already here, a glossary term, or an ADR-worthy decision, but offer the find rather than writing it straight in, the same restraint "offer ADRs sparingly" already establishes. Nothing in the conversation has ratified an unprompted find the way a reactive correction is ratified by the discussion that produced it.
+
+Offer it the same term you find it, before moving on to unrelated work, never defer to "later" or a wrap-up. An unoffered discovery is indistinguishable from a dropped one.
+
+Give it its own distinct call-out with its own confirmation, a heading like ` **Discovery**`, set apart from any other prompt on the table. Never fold it into a numbered list of unrelated questions (e.g. as one more option in someone else's multiple choice batch): bundled that way it reads as low-stakes and is easy to wave through without really being seen.
+
 ### Update CONTEXT.md inline
 
-When a term is resolved, update `CONTEXT.md` right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
+When a term resolves, whether from discussion or an offered discovery the user confirmed, update `CONTEXT.md` right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 

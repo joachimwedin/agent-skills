@@ -47,6 +47,14 @@ A dependency line that just names the other repo isn't done. Push for the actual
 
 Check the claimed dependency against reality — an import, a `package.json` entry, a git submodule. If the code doesn't back up what's being described, surface the mismatch.
 
+## Capture unprompted discoveries
+
+Every trigger above reacts to something the user said. Research you run for your own reasons, a subagent, digging through CI config, a `git log` spelunk to answer your own question, surfaces facts nobody made a claim about, and those are just as capturable. Judge them against the `## Notes` bar (REPO-FORMAT.md: durable, repo specific, would trip up a future reader) the moment they're confirmed, but *offer* them rather than writing straight in, the same restraint as offering an ADR. Nothing in the conversation has ratified an unprompted find the way a reactive correction is ratified by the discussion that produced it.
+
+Offer it the same turn you find it before moving on to unrelated work. Never defer to *later* or a wrap-up. An unoffered discovery is indistinguishable from a dropped one.
+
+Give it its own distinct callout with its own confirmation, a heading like ** Discovery**, set apart from any other prompt on the table. Never fold it into a numbered list of unrelated questions (e.g. as one more option in someone else's multiple choice batch): bundled that way it reads as a low stakes and is easy to wave through without really being seen.
+
 ### Update inline
 
-When a repo's purpose or a dependency resolves, write it into that repo's `.md` file right there — don't batch.
+When a repo's purpose, a dependency, or a Notes-worthy fact resolves, whether from a discussion or an offered discovery the user confirmed, write it into that repo's `.md` file right there. Don't batch.

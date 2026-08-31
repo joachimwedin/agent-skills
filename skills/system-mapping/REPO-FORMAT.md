@@ -12,6 +12,10 @@ Every member repo's detail lives at `./repos/{repo}.md`.
 - **Domain glossary**: [CONTEXT.md](./CONTEXT.md) (only once it exists)
 - **Architecture decisions**: [docs/adr/](./docs/adr) (only once the first ADR exists)
 
+## Capturing discoveries
+
+When investigating a repo surfaces a durable fact not yet recorded here (an entity's real fields, a dependency that doesn't exist, a boundary between services), use `/domain-modeling` or `/system-mapping` to capture it before ending the turn, or ask the user if unsure it's worth keeping.
+
 ## System shape
 
 {A handful of durable, always true facts about the group as a whole - not a repo's own detail. Keep this very short: a few one-line facts, not paragraphs. Omit the section entirely if there's nothing that clears the bar of "true of the whole system, not just one repo."}
