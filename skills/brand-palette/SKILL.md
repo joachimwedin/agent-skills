@@ -135,38 +135,40 @@ systems apply them in practice; and re-verify Tailwind's current actual
 default palette values/token names by fetching their real source or docs
 — don't rely on memory. Cite what you find.
 
-**3. Find candidate accent hues, using your research.** Explicitly check
-and avoid landing within roughly 25-30 degrees of Tailwind's conventional
-semantic hues in OKLCH — red is around 25 degrees, green is around 145-150
-degrees, amber is around 80-85 degrees. An accent that close to "danger"
-or "success" red/green reads as a status color, not a brand choice, and
-undermines those conventions elsewhere in the UI. Try the relationships in
-order of how much visual contrast they carry (complementary, triadic,
-split-complementary, analogous, both directions of each) and record
-**every** one you test, collision or not — that full trail becomes the
-report's collision table regardless of which end up chosen. If every
-standard relationship collides, nudge the angle rather than forcing a
-collision through.
+**3. Find candidate accent hues, using your research.** Try the classical
+hue-harmony relationships — complementary, triadic, split-complementary,
+analogous (both directions of each) — rotated from the primary's hue, in
+order of how much visual contrast they carry. Compute the resulting hex
+for each and record **every** relationship you test, so the report can
+show the full trail of what was considered — this becomes the report's
+hue-relationship table regardless of which end up chosen. Note each
+result's distance from Tailwind's conventional semantic hues (red ~25°,
+green ~145-150°, amber ~80-85° in OKLCH) as information for the write-up —
+a hue that lands in that neighborhood is worth flagging in its candidate's
+fit argument, since a reader should know it shares a neighborhood with
+"danger" or "warning" — but proximity to a status hue is never, by itself,
+a reason to discard a candidate. What decides a candidate is how well it
+pairs with the primary and how well it fits the project (per 0c), not
+distance from red/green/amber.
 
-**4. Produce three candidates, not one.** From the hues that came back
-clear in step 3, pick **three** that are genuinely different from each
-other — not three shades of the same idea — and are each defensible for
-*this* project using the 0c research, not just clear of semantic hues.
-Good spreads to aim for: one that leans into the category convention
-(reads as safe/trustworthy/expected), one that deliberately breaks from it
-(reads as differentiated/modern), and one more — e.g. a warmer/human
-option, or whichever third distinct personality your research surfaced —
-so the three actually differ in what they'd communicate, not just in hue
-number. If `<primary-hex>` was given, all three candidates share that same
-fixed primary and differ only in accent. If you chose the primary yourself
-in step 0d, you may instead vary the *pair* across candidates (e.g. three
-different primary/accent stories for the category), but do not present
-three accents that are all just "clear of red/green/amber" with no
-argument for why each one in particular suits this project — every
-candidate needs its own one-line "why this one" tied to the 0c research,
-not only its collision-clearance number. Mark exactly one candidate
-**recommended**, with the reasoning for the pick, but generate and show
-all three at full strength (step 5-6 below) — the report presents all
+**4. Produce three candidates, not one.** From the hues generated in
+step 3, pick **three** that are genuinely different from each other — not
+three shades of the same idea — and are each defensible for *this* project
+using the 0c research. Good spreads to aim for: one that leans into the
+category convention (reads as safe/trustworthy/expected), one that
+deliberately breaks from it (reads as differentiated/modern), and one
+more — e.g. a warmer/human option, or whichever third distinct personality
+your research surfaced — so the three actually differ in what they'd
+communicate, not just in hue number. If `<primary-hex>` was given, all
+three candidates share that same fixed primary and differ only in accent.
+If you chose the primary yourself in step 0d, you may instead vary the
+*pair* across candidates (e.g. three different primary/accent stories for
+the category), but do not present three accents with no argument for why
+each one in particular suits this project — every candidate needs its own
+one-line "why this one" tied to the 0c research and to how well it pairs
+with the primary, not to whether it avoids a status hue. Mark exactly one
+candidate **recommended**, with the reasoning for the pick, but generate
+and show all three at full strength (step 5-6 below) — the report presents all
 three, not just the recommended one.
 
 **5. Generate full 11-step OKLCH scales for the primary and for each of
@@ -201,7 +203,7 @@ reuse them across all three.
 
 **a.** Print, in your final response: a short summary — if you chose the
 primary yourself, what the project is and the category research that led
-to it; the full collision trail (every relationship tried, per candidate);
+to it; the full hue-relationship trail (every relationship tried, per candidate);
 the three candidates and, for each, the one-line project-fit argument and
 its accent hue/hex; which one is recommended and why; and your best
 sources — followed by the full CSS from **b** and **c** for all three
@@ -268,10 +270,10 @@ report — not only the recommended one:
        "accentHex": "#A44BFF",
        "accentHcl": "H 299.3° · C 0.265 · L 62.7%",
        "relationship": "Triadic (+120°)",
-       "fitArgument": "1-2 sentences: why THIS accent suits THIS project, tied to the 0c research — not just 'it's clear of red/green'.",
+       "fitArgument": "1-2 sentences: why THIS accent suits THIS project, tied to the 0c research and to how well it pairs with the primary — not to distance from red/green/amber.",
        "collisionRows": [
-         {"relationship":"Complementary (+180°)","hue":"359.3°","nearest":"Red / danger (~25-27°)","verdict":"Collision — rejected (25.7° gap)"}
-         // one entry per relationship tried FOR THIS CANDIDATE's hue search; if candidates share a search trail, repeat it identically rather than omitting it
+         {"relationship":"Complementary (+180°)","hue":"359.3°","nearest":"Red / danger (~25-27°)","verdict":"Tried — not selected (weaker primary-fit than the chosen candidate)"}
+         // one entry per relationship tried FOR THIS CANDIDATE's hue search, regardless of outcome; if candidates share a search trail, repeat it identically rather than omitting it. Nearness to a semantic hue is noted here as information only, never as grounds for rejection — mark the row that matches this candidate's own accentHex as "Selected — used as this candidate".
        ],
        "themeLightInner": "    --color-primary-50: oklch(...);\n    ...\n    --color-ring: var(--color-primary-600);",
        "themeDarkInner": "    --color-background: var(--color-neutral-950);\n    ...\n    --color-ring: var(--color-primary-400);"

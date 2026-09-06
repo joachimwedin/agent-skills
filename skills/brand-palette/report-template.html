@@ -256,10 +256,10 @@
       </div>
     </div>
 
-    <p class="candidate-sub-head">Collision check</p>
+    <p class="candidate-sub-head">Hue-relationship trail</p>
     <div class="table-scroll">
       <table class="collision">
-        <thead><tr><th>Relationship tried</th><th>Resulting hue</th><th>Nearest semantic hue</th><th>Verdict</th></tr></thead>
+        <thead><tr><th>Relationship tried</th><th>Resulting hue</th><th>Nearest semantic hue</th><th>Notes</th></tr></thead>
         <tbody class="cand-collision-rows"></tbody>
       </table>
     </div>
@@ -389,8 +389,7 @@
 
   function colorVerdictCell(td){
     var t = td.textContent.toLowerCase();
-    if(t.indexOf('clear') !== -1) td.classList.add('verdict-clear');
-    else if(t.indexOf('collision') !== -1 || t.indexOf('borderline') !== -1 || t.indexOf('reject') !== -1) td.classList.add('verdict-bad');
+    if(t.indexOf('selected') !== -1) td.classList.add('verdict-clear');
   }
 
   // ---- load candidate data ----
