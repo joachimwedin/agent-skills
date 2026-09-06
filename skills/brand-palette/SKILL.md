@@ -234,13 +234,16 @@ report — not only the recommended one:
    (find this skill's own directory — it ships with Claude Code's skill
    system, typically under `~/.claude/skills/brand-palette/`). Don't
    redesign or restyle it: it already carries a complete visual system for
-   three side-by-side candidates (fonts, layout, swatch rendering, a
-   semantic token table with a live light/dark toggle per candidate, code
-   blocks with copy buttons) and Tailwind's real reference scales, and
-   always renders in a fixed **light** reading theme regardless of the
-   viewer's system preference — so filling it in is purely mechanical.
-   `example.html` in the same directory is a worked, filled-in report from
-   a real run — check it if you want to see the bar before you start.
+   three side-by-side candidates (fonts, layout, swatch rendering, code
+   blocks with copy buttons), Tailwind's real reference scales, and a fixed
+   semantic-layer demo — an account-settings panel that shows every
+   semantic token in one real UI shape, re-colorable per candidate via a
+   switcher, instead of a table of isolated swatches — and always renders
+   in a fixed **light** reading theme regardless of the viewer's system
+   preference. That demo's content is baked in like the reference scales
+   are: don't customize or replace it per project, and don't add
+   destructive/success/warning to it — filling in the template is purely
+   mechanical.
 2. The template is data-driven: most of it is filled in once (project-wide
    placeholders), and the three candidates are supplied as one JSON array
    consumed by the template's own script, rather than three copies of
@@ -271,10 +274,6 @@ report — not only the recommended one:
        "accentHcl": "H 299.3° · C 0.265 · L 62.7%",
        "relationship": "Triadic (+120°)",
        "fitArgument": "1-2 sentences: why THIS accent suits THIS project, tied to the 0c research and to how well it pairs with the primary — not to distance from red/green/amber.",
-       "collisionRows": [
-         {"relationship":"Complementary (+180°)","hue":"359.3°","nearest":"Red / danger (~25-27°)","verdict":"Tried — not selected (weaker primary-fit than the chosen candidate)"}
-         // one entry per relationship tried FOR THIS CANDIDATE's hue search, regardless of outcome; if candidates share a search trail, repeat it identically rather than omitting it. Nearness to a semantic hue is noted here as information only, never as grounds for rejection — mark the row that matches this candidate's own accentHex as "Selected — used as this candidate".
-       ],
        "themeLightInner": "    --color-primary-50: oklch(...);\n    ...\n    --color-ring: var(--color-primary-600);",
        "themeDarkInner": "    --color-background: var(--color-neutral-950);\n    ...\n    --color-ring: var(--color-primary-400);"
      }
