@@ -149,9 +149,8 @@ only — nothing written to disk represents them):
 
 - **In flight**: every child ticket that currently has a `spec-pass`
   subagent dispatched and not yet landed or given up on, each carrying
-  its worktree path, branch name, dispatched mode (`work` or
-  `review-child`), and its landing `attempt` counter (see "Landing"
-  below).
+  its worktree path, branch name, and dispatched mode (`work` or
+  `review-child`).
 - **Standing failures**: every child ticket excluded from further
   automatic dispatch this run after two consecutive subagent crashes
   (see RECOVERY.md's "Failure handling").
@@ -251,8 +250,8 @@ separate actions:
    in Run's "On a ticket landing" rule above.
 3. **Conflict** — abort the merge (`git -C <project-repo-dir> merge
    --abort`), leaving the base exactly as it stood before this attempt.
-   See RECOVERY.md's "Landing conflict retries" for the retry protocol
-   before attempting to land this ticket again.
+   See RECOVERY.md's "Landing conflict recovery" for what to do before
+   attempting to land this ticket again.
 
 ## Spec review
 

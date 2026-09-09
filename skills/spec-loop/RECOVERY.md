@@ -7,28 +7,36 @@ this skill performs directly starts erroring out. None of it changes
 the happy-path steps in `SKILL.md`'s "Run" and "Landing" sections — it
 only covers what those sections point here for.
 
-## Landing conflict retries
+## Landing conflict recovery
 
 Detail for "Landing"'s conflict case in `SKILL.md`.
 
 - **Whenever a landing attempt conflicts** — the child's branch
-  conflicts with the base as it stands right now. Track this ticket's
-  own 1-indexed `attempt` counter, starting at 1 on its first landing
-  attempt this run. Recover the conflicting diff (`git -C
-  <project-repo-dir> diff <spec-branch>...<child-branch>`, taken right
-  after aborting the merge) and dispatch a fresh conflict-resolution
-  `spec-pass` **`work`** subagent on the *same* worktree/branch — still
-  tracked **in flight** under this same ticket, not a new entry —
-  handed that diff and told to resolve it against the base and commit.
-  Once that subagent reports back, attempt landing this same ticket
-  again with `attempt` incremented by one. Never resolve a conflict
-  yourself, and never merge or enact the fate yourself while a
-  resolution is outstanding.
-- **After 3 attempts** — give up automatically: inline resolution is
-  abandoned, and the ticket is recycled to `todo/` with a `## Flagged`
-  section instead of the fate it originally reported, reporting
-  `flagged` back exactly as `SKILL.md`'s "Landing" section describes
-  for a clean-but-abandoned case.
+  conflicts with the base as it stands right now. Abort the merge,
+  then dispatch a fresh conflict-resolution `spec-pass` **`work`**
+  subagent on the *same* worktree/branch — still tracked **in flight**
+  under this same ticket, not a new entry — told to rebase its branch
+  onto the current base (`git rebase <spec-branch>`, from within the
+  child's own worktree). For each commit git stops on, judge that
+  conflict on its own merits as it arises:
+  - **Small and mechanical** (a few line-level conflicts, clearly
+    resolvable without redesigning anything) — resolve it and continue
+    the rebase.
+  - **Not** (structural conflicts — e.g. a file the base deleted or
+    relocated wholesale, logic the base has since rewritten around) —
+    abort the rebase immediately (`git rebase --abort`, leaving the
+    branch exactly as it stood before this attempt) and report
+    `flagged`, naming the commit and why reworking from scratch against
+    the current base looks easier than resolving this rebase.
+  Never resolve a conflict yourself, and never merge or enact the fate
+  yourself while this subagent is outstanding.
+- **On a clean rebase** (every commit replayed with no unresolvable
+  conflict) — attempt landing this same ticket again; the branch is now
+  rebased onto the base, so this landing is a fast-forward or trivially
+  clean merge.
+- No fixed retry count: one rebase attempt is enough for the subagent
+  to reach a verdict on every commit at once. A second identical
+  attempt wouldn't learn anything the first didn't already judge.
 
 ## Failure handling
 
