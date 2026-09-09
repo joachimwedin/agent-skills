@@ -23,6 +23,7 @@ Structure, always in this order, always with every section present regardless of
 3. **`**Changes:**`** followed by a bullet list of the distinct logical changes. Always include this section, even for a single-commit, single-file diff - a one-bullet list is fine, don't collapse it into the overview paragraph.
 4. **`### File summary`** followed by a `File | Description` markdown table listing every file touched in the diff and a one-line description of what changed in it. Always include the table, even for a single changed file. File paths in the table are plain text, not wrapped in backticks.
 5. If related work was deduced, a **`**Related work:**`** section after the file summary, summarizing the relationship in a sentence or two (plain text, no invented links). Omit this section entirely if no related work was found.
+6. Never follow a backtick-wrapped word directly with a possessive `'s'. Either drop the backticks on that mention or rephrase the sentence around it.
 
 ## Output
 
