@@ -1,11 +1,11 @@
 ---
-name: pixel-diff-converge
+name: pixel-diff-loop
 description: Iterate pixel-diff fixes against a design reference until the mismatch converges below a threshold, committing each improvement as it lands — or reports stuck if it can't get there.
 argument-hint: "<reference> <repo-path> [route]"
 disable-model-invocation: true
 ---
 
-# Pixel Diff Converge
+# Pixel Diff Loop
 
 Drives a live UI toward pixel fidelity with a reference design: repeatedly runs `pixel-diff`, fixes the single worst difference it reports, keeps the fix only once it's measurably helped, and stops when the mismatch **converges** below a threshold — or gives up and reports **stuck** if it can't.
 
