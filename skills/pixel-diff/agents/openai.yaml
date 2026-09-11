@@ -1,0 +1,3 @@
+interface:
+  display_name: "Pixel Diff"
+  short_description: "Diff a live UI against a reference design pixel-by-pixel"
