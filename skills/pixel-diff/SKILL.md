@@ -17,6 +17,7 @@ Invoked with a reference (an HTML file path — a screenshot image also works, s
 2. **Write a throwaway spec file** (wherever the config's `testDir` expects test files) that:
    - Opens the reference at `file://<reference-path>`, sets the viewport to 1440×900 (`deviceScaleFactor: 1`) unless told otherwise, and takes a `fullPage` screenshot.
    - Navigates to `<webServer.url><route>` in a second page, performs whatever clicks, fills, or hovers get it into the state described in the invocation (a modal open, a tab selected — infer these from what you're asked to verify; there's no separate argument for them), then takes a `fullPage` screenshot at the same viewport.
+   - If the invocation names elements with non-deterministic content (a randomized hero image, rotating testimonials, ads) — pass their selectors to both screenshots' `mask` option (`page.screenshot({ mask: [...], maskColor: '#000000' })`), so that content never enters the diff. Only mask what's explicitly named; don't mask every image by default, since a wrong image or broken sizing is still a real mismatch worth catching.
    - Compares both images' raw dimensions before diffing. If they differ by more than a few pixels, report that mismatch directly (e.g. "reference is 2140px tall, implementation is 3400px — check for a missing height/overflow constraint") and stop; don't attempt a pixel diff on mismatched canvases.
    - Diffs matching-dimension images with `pixelmatch` (`npx pixelmatch`, no install needed — check `npx pixelmatch --help` for exact flags), threshold from the invocation or 1% mismatch by default.
    - For each contiguous mismatched region, computes its bounding box and calls `elementFromPoint` at its center against the live page to report a DOM selector, not raw coordinates.
@@ -29,5 +30,5 @@ Invoked with a reference (an HTML file path — a screenshot image also works, s
 
 State, in the conversation:
 - Pass or fail against the threshold, and the mismatch percentage.
-- Each mismatched region as a DOM selector (or coordinates, if nothing resolved at that point), with its own local mismatch estimate.
+- Each mismatched region as a DOM selector (or coordinates, if nothing resolved at that point), with its own local mismatch estimate. If a region resolves to an `<img>` or an element with a `background-image`, flag it as possibly non-deterministic content rather than a real mismatch, and suggest re-running with it masked.
 - The diff image's path, if it's worth a follow-up look.
