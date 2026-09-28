@@ -1,8 +1,9 @@
-# Review Standards
+# Design Standards
 
-The standards `spec-review` applies to a Spec's whole branch — unusually
-strict, focused on implementation quality, maintainability, abstraction
-quality, and codebase health.
+The design lens of `deep-review`, applied to a whole change set —
+unusually strict, focused on implementation quality, maintainability,
+abstraction quality, and codebase health. Where a project's own written
+convention conflicts with a standard here, the convention wins.
 
 Above all, push to be **ambitious** about code structure. Do not merely
 identify local cleanup opportunities. Actively search for "code judo"
@@ -240,6 +241,7 @@ when larger structural issues are present.
 
 Correct behavior alone doesn't clear the bar. The bar for approval is:
 
+- no unaddressed violation of the project's written conventions
 - no clear structural regression
 - no obvious missed opportunity to make the implementation dramatically
   simpler when such a path is visible

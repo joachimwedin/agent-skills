@@ -21,4 +21,4 @@ MIT - see [LICENSE](./LICENSE).
 
 Many of these skills originated from, or were adapted from, [mattpocock/skills](https://github.com/mattpocock/skills) (MIT licensed, Copyright (c) 2026 Matt Pocock) - some used as-is, others edited more heavily. Credit for the underlying ideas belongs there; thanks to Matt Pocock for sharing them.
 
-`spec-review`'s [REVIEW-STANDARDS.md](./skills/spec-review/REVIEW-STANDARDS.md) is adapted from cursor/plugins' [thermo-nuclear-code-quality-review](https://github.com/cursor/plugins/blob/main/cursor-team-kit/skills/thermo-nuclear-code-quality-review/SKILL.md) skill (MIT licensed, Copyright (c) 2026 Cursor).
+`deep-review`'s [DESIGN-STANDARDS.md](./skills/deep-review/DESIGN-STANDARDS.md) is adapted from cursor/plugins' [thermo-nuclear-code-quality-review](https://github.com/cursor/plugins/blob/main/cursor-team-kit/skills/thermo-nuclear-code-quality-review/SKILL.md) skill (MIT licensed, Copyright (c) 2026 Cursor).

@@ -1,6 +1,6 @@
 ---
 name: spec-review
-description: The strict, whole-branch review that closes out a Spec on agent-tickets once every child ticket is done — fix directly, or file new child tickets for anything too large to fix in place, then close or reopen the Spec. Use when spec-pass spawns a subagent because a Spec is sitting in review/.
+description: Closes out a Spec on agent-tickets once every child ticket is done — a deep-review of the whole branch plus a check against the Spec, then fix directly or file new child tickets, then close or reopen the Spec. Use when spec-pass spawns a subagent because a Spec is sitting in review/.
 ---
 
 # Spec Review
@@ -19,12 +19,17 @@ log and diff, not just the latest commits — plus the Spec file itself.
 
 ## Review
 
-Apply [REVIEW-STANDARDS.md](./REVIEW-STANDARDS.md) in full against that
-whole-branch diff.
+Run `deep-review` on that whole-branch change set. When the skill is not
+listed, read `../deep-review/SKILL.md` and follow it.
+
+Then check the branch against the Spec: map every requirement, and every
+child ticket's acceptance criteria, to code or test evidence in the diff.
+A requirement with no evidence is a gap, reported as a finding.
 
 ## Execution
 
-Fix what you can directly, on this branch:
+Fix what you can directly, on this branch, from the findings of both the
+`deep-review` and the Spec check:
 
 1. If `package.json` defines a `build` script, run it; if it defines a
    `test` script, run that too. Skip whichever doesn't exist.
@@ -33,7 +38,8 @@ Fix what you can directly, on this branch:
 
 File anything too large to fix in place as a new child ticket instead,
 per [TICKET-FORMAT.md](../agent-tickets/TICKET-FORMAT.md)'s "publish to
-the tracker".
+the tracker" — a Spec requirement with no implementation is typically
+one of these.
 
 ## Decide the Spec's fate
 

@@ -1,3 +1,3 @@
 interface:
   display_name: "Spec Review"
-  short_description: "Strict whole-branch review that closes out a Spec"
+  short_description: "Whole-branch deep-review plus a Spec check that closes out a Spec"
