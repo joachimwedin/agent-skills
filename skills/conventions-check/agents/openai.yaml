@@ -1,3 +1,3 @@
 interface:
   display_name: "Conventions Check"
-  short_description: "Read-only check of a repo against its stated conventions, with an HTML report"
+  short_description: "Read-only check of a repo or diff against its stated conventions, reporting violations as structured findings"
