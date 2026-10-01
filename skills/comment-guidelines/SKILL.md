@@ -5,7 +5,7 @@ description: What makes a code comment worth writing versus noise that will rot 
 
 # Comment guidelines
 
-Default to no comments. Names and structure should carry meaning; add a comment only when the code cannot say something on its own. When one is warranted, keep it to one line, written as a plain `//` (or your language's equivalent) — the exception is a real public API surface (see below), which is documented with the language's doc-comment form instead.
+Default to no comments. Names and structure should carry meaning; add a comment only when the code cannot say something on its own. When one is warranted, keep it to one line of at most 120 characters, written as a plain `//` (or your language's equivalent) — if it doesn't fit, shorten it rather than wrapping to a second line. The exception is a real public API surface (see below), which is documented with the language's doc-comment form instead, wrapped across multiple lines at that same 120-character width rather than left as one long line.
 
 ## What earns a comment
 
