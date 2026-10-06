@@ -1,6 +1,6 @@
-# docs
+# agent-vault
 
-Shared knowledge base for me and coding agents. Only `vault/` is mounted into sandboxes (`sbx create claude <workspace> ~/docs/vault`), so agents never see `.git` or `scripts/`. History and backups are host-side only.
+Shared knowledge base for me and coding agents. Only `vault/` is mounted into sandboxes (`sbx create claude <workspace> ~/agent-vault/vault`), so agents never see `.git` or `scripts/`. History and backups are host-side only.
 
 - `vault/` — the documents. Rules for writing there are in `vault/CLAUDE.md`.
 - `scripts/snapshot.sh` — commits all changes under `vault/` with a timestamp.
