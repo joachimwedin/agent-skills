@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PR report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #0d0e10; -webkit-font-smoothing: antialiased; }
+  a { color: oklch(0.80 0.09 240); text-decoration: none; }
+  a:hover { color: oklch(0.90 0.09 240); text-decoration: underline; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .sans { font-family: 'IBM Plex Sans', sans-serif; }
+</style>
+</head>
+<body>
+<div style="padding:32px 24px">
+<div style="max-width:1120px;margin:0 auto">
+<div class="sans" style="background:oklch(0.17 0.005 260);color:oklch(0.93 0.005 260);border:1px solid oklch(0.27 0.006 260);border-radius:8px;overflow:hidden">
+
+  <header id="run-header" class="mono" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:14px 32px;border-bottom:1px solid oklch(0.27 0.006 260);font-size:13px;white-space:nowrap;color:oklch(0.72 0.006 260)"></header>
+
+  <div style="padding:40px 32px 36px;border-bottom:1px solid oklch(0.27 0.006 260)">
+    <div class="mono" style="font-weight:600;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:oklch(0.72 0.006 260);margin-bottom:14px">What this branch does</div>
+    <p id="narrative" style="margin:0;font-size:17px;line-height:1.55;font-weight:500;max-width:62ch;text-wrap:pretty;color:oklch(0.96 0.004 260)"></p>
+  </div>
+
+  <div style="padding:32px 32px 28px;border-bottom:1px solid oklch(0.27 0.006 260)">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+      <h2 style="margin:0;font-size:17px;font-weight:600">Where to look first</h2>
+      <span style="font-size:13px;color:oklch(0.72 0.006 260)">Riskiest files first. Click a row for the reasons.</span>
+    </div>
+    <div style="border:1px solid oklch(0.27 0.006 260);border-radius:6px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px 180px 28px;gap:16px;padding:9px 16px;background:oklch(0.20 0.006 260);font-size:12px;font-weight:500;color:oklch(0.72 0.006 260)">
+        <span>Risk</span><span>File</span><span>Changed before</span><span>Reviewed in</span><span></span>
+      </div>
+      <div id="files-list"></div>
+    </div>
+  </div>
+
+  <div style="padding:32px 32px 36px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+      <h2 style="margin:0;font-size:17px;font-weight:600">The changes, grouped by what they do</h2>
+      <span style="font-size:13px;color:oklch(0.72 0.006 260)">Each group can be reviewed on its own.</span>
+    </div>
+    <div id="chunks-list" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script type="application/json" id="pr-data">
+__PR_DATA__
+</script>
+
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById('pr-data').textContent);
+
+  // ---- design tokens ----
+  const RISK = {
+    high:   { label: 'High risk',   short: 'High',   fg: 'oklch(0.74 0.17 25)',  bg: 'oklch(0.74 0.17 25 / 0.14)',  border: '1px solid oklch(0.74 0.17 25 / 0.55)', bar: 'oklch(0.66 0.19 25)', rank: 0 },
+    medium: { label: 'Medium risk', short: 'Medium', fg: 'oklch(0.84 0.14 80)',  bg: 'oklch(0.84 0.14 80 / 0.12)',  border: '1px solid oklch(0.84 0.14 80 / 0.5)',  bar: 'oklch(0.80 0.15 80)', rank: 1 },
+    low:    { label: 'Low risk',    short: 'Low',    fg: 'oklch(0.80 0.13 150)', bg: 'oklch(0.80 0.13 150 / 0.10)', border: '1px solid oklch(0.80 0.13 150 / 0.4)', bar: 'oklch(0.70 0.14 150)', rank: 2 },
+    unknown:{ label: 'Unknown',     short: 'Unknown',fg: 'oklch(0.80 0 0)',      bg: 'transparent',                  border: '1px solid oklch(0.50 0 0)',            bar: 'oklch(0.50 0 0)',     rank: 3 },
+  };
+  // A line-level "low" flag deliberately does not reuse RISK.low's green: green reads as "safe to
+  // ignore" on a code line, but a flag always means "look here" — no flag is the real safe signal.
+  const LINE_FLAG_LOW = { label: 'Minor risk', fg: 'oklch(0.86 0.01 260)', bar: 'oklch(0.66 0.01 260)' };
+  const VERDICT = {
+    red:    { label: 'Reviewed, critical issues', fg: RISK.high.fg,   bg: RISK.high.bg,   border: RISK.high.border },
+    yellow: { label: 'Reviewed, minor issues',    fg: RISK.medium.fg, bg: RISK.medium.bg, border: RISK.medium.border },
+    green:  { label: 'Reviewed, no issues',       fg: RISK.low.fg,    bg: RISK.low.bg,    border: RISK.low.border },
+  };
+  const SEV = {
+    high:   { short: 'Serious',     fg: RISK.high.fg },
+    medium: { short: 'Fix',         fg: RISK.medium.fg },
+    low:    { short: 'Minor',       fg: 'oklch(0.80 0.02 80)' },
+  };
+  const DIFF = {
+    add:  { bg: 'oklch(0.31 0.065 150)', fg: 'oklch(0.96 0.02 150)', sign: 'oklch(0.85 0.16 150)', num: 'oklch(0.72 0.06 150)' },
+    del:  { bg: 'oklch(0.30 0.075 25)',  fg: 'oklch(0.94 0.02 25)',  sign: 'oklch(0.82 0.15 25)',  num: 'oklch(0.72 0.06 25)' },
+    ctx:  { bg: 'transparent',           fg: 'oklch(0.76 0.008 260)', sign: 'transparent',          num: 'oklch(0.56 0.006 260)' },
+    hunk: { bg: 'oklch(0.23 0.03 250)',  fg: 'oklch(0.78 0.05 250)', sign: 'transparent',           num: 'transparent' },
+  };
+  const REASON_LABELS = [
+    ['blastRadius', 'What depends on it'],
+    ['complexity', 'Size of the change'],
+    ['coverageGap', 'Tests'],
+    ['pathCriticality', 'Sensitive area'],
+  ];
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  const slug = (s) => s.replace(/[^a-z0-9]+/gi, '-');
+
+  // ---- diff parsing: one hunk's raw unified-diff text -> line records ----
+  function parseHunk(diffText) {
+    const out = [];
+    let o = 0, n = 0;
+    for (const raw of diffText.split('\n')) {
+      const m = raw.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/);
+      if (m) { o = +m[1]; n = +m[2]; out.push({ kind: 'hunk', text: raw }); continue; }
+      const c = raw[0], body = raw.slice(1);
+      if (c === '+') out.push({ kind: 'add', text: body, newNo: n++ });
+      else if (c === '-') out.push({ kind: 'del', text: body, oldNo: o++ });
+      else out.push({ kind: 'ctx', text: body, oldNo: o++, newNo: n++ });
+    }
+    return out;
+  }
+
+  // ---- header ----
+  document.getElementById('run-header').innerHTML =
+    `<span style="color:oklch(0.95 0.005 260);font-weight:600">${esc(data.branch)}</span>` +
+    `<span>into ${esc(data.base)}</span>` +
+    `<span>· ${data.files.length} files changed</span>` +
+    `<span>· ${data.chunks.length} groups of related changes</span>`;
+
+  document.getElementById('narrative').textContent = data.narrative;
+
+  // ---- files table ----
+  const chunksForFile = (path) => data.chunks.filter((c) => c.files.includes(path));
+  const filesList = document.getElementById('files-list');
+  const sortedFiles = [...data.files].sort((a, b) => RISK[a.risk.overall].rank - RISK[b.risk.overall].rank);
+
+  for (const f of sortedFiles) {
+    const risk = RISK[f.risk.overall];
+    const touching = chunksForFile(f.path);
+    const slashAt = f.path.lastIndexOf('/');
+    const dir = slashAt >= 0 ? f.path.slice(0, slashAt + 1) : '';
+    const name = slashAt >= 0 ? f.path.slice(slashAt + 1) : f.path;
+    const historyText = f.historicalEdits === 0 ? 'New in this branch' : `${f.historicalEdits} times`;
+
+    const row = document.createElement('div');
+    row.style.borderTop = '1px solid oklch(0.25 0.006 260)';
+    const reasonsHtml = REASON_LABELS.map(([key, label]) => {
+      const text = key === 'coverageGap' ? f.risk.structural.coverageGap
+        : key === 'pathCriticality' ? f.risk.structural.pathCriticality
+        : f.risk.structural[key];
+      return `<div style="background:oklch(0.15 0.005 260);padding:12px 16px">` +
+        `<div style="font-size:12px;color:oklch(0.72 0.006 260);margin-bottom:4px">${esc(label)}</div>` +
+        `<div style="font-size:13.5px;line-height:1.45;color:oklch(0.92 0.005 260);text-wrap:pretty">${esc(text)}</div></div>`;
+    }).join('');
+    const reviewedInHtml = touching.length
+      ? touching.map((c) => `<a href="#${c.id}" class="jump-chunk" data-target="${c.id}" style="font-size:13px;margin-right:10px">${esc(c.id.replace('chunk-', 'Group '))}</a>`).join('')
+      : '<span style="font-size:13px;color:oklch(0.55 0.006 260)">—</span>';
+
+    row.innerHTML =
+      `<div class="file-row" style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px 180px 28px;gap:16px;align-items:center;padding:10px 16px;cursor:pointer">` +
+      `<span style="justify-self:start;font-size:12px;font-weight:600;padding:3px 9px;border-radius:4px;color:${risk.fg};background:${risk.bg};border:${risk.border}">${risk.label}</span>` +
+      `<span class="mono" style="font-size:13.5px;overflow-wrap:anywhere"><span style="color:oklch(0.70 0.006 260)">${esc(dir)}</span><span style="color:oklch(0.96 0.004 260);font-weight:500">${esc(name)}</span></span>` +
+      `<span style="font-size:13px;color:oklch(0.78 0.006 260)">${esc(historyText)}</span>` +
+      `<span>${reviewedInHtml}</span>` +
+      `<span class="chevron" style="color:oklch(0.72 0.006 260);font-size:12px;text-align:center">▸</span>` +
+      `</div>` +
+      `<div class="file-detail" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:oklch(0.25 0.006 260);border-top:1px solid oklch(0.25 0.006 260)">${reasonsHtml}</div>`;
+
+    const header = row.querySelector('.file-row');
+    const detail = row.querySelector('.file-detail');
+    const chevron = row.querySelector('.chevron');
+    header.addEventListener('click', () => {
+      const open = detail.style.display === 'grid';
+      detail.style.display = open ? 'none' : 'grid';
+      chevron.textContent = open ? '▸' : '▾';
+      header.style.background = open ? 'transparent' : 'oklch(0.21 0.006 260)';
+    });
+    filesList.appendChild(row);
+  }
+
+  // ---- chunks ----
+  function renderFileDiff(chunk, path) {
+    const hunksForPath = chunk.hunks.filter((h) => h.file === path);
+    const flags = chunk.riskPerLine.filter((r) => r.file === path);
+    let adds = 0, dels = 0;
+    const lineRows = [];
+    for (const h of hunksForPath) {
+      for (const l of parseHunk(h.diff)) {
+        if (l.kind === 'add') adds++;
+        if (l.kind === 'del') dels++;
+        const d = DIFF[l.kind];
+        const flag = (l.kind === 'add' || l.kind === 'ctx') ? flags.find((fl) => fl.line === l.newNo) : null;
+        const sign = l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : '';
+        // Low-risk flags get a neutral treatment, not green — see LINE_FLAG_LOW above.
+        const flagTokens = flag ? (flag.risk === 'low' ? LINE_FLAG_LOW : RISK[flag.risk]) : null;
+        const noteBg = flag
+          ? (flag.risk === 'low' ? 'oklch(0.22 0.006 260)' : `oklch(0.21 0.02 ${flag.risk === 'high' ? 25 : 80})`)
+          : 'oklch(0.155 0.005 260)';
+        const notePad = flag ? '2px 10px 3px' : '0';
+        const flagFg = flag ? flagTokens.fg : 'transparent';
+        const flagLabel = flag ? `${flagTokens.label} · ` : '';
+        const markBg = flag ? flagTokens.bar : 'transparent';
+        lineRows.push(
+          `<div style="display:grid;grid-template-columns:44px 44px 5px 20px minmax(0,1fr) 290px;background:${d.bg}">` +
+          `<span style="text-align:right;padding-right:8px;color:${d.num};user-select:none">${l.kind === 'hunk' ? '' : (l.oldNo ?? '')}</span>` +
+          `<span style="text-align:right;padding-right:8px;color:${d.num};user-select:none">${l.kind === 'hunk' ? '' : (l.newNo ?? '')}</span>` +
+          `<span style="background:${markBg}"></span>` +
+          `<span style="text-align:center;color:${d.sign};font-weight:600;user-select:none">${sign}</span>` +
+          `<span style="white-space:pre-wrap;overflow-wrap:anywhere;padding-right:12px;color:${d.fg}">${esc(l.text)}</span>` +
+          `<span class="sans" style="font-size:12px;line-height:17px;padding:${notePad};background:${noteBg};border-left:1px solid oklch(0.27 0.006 260);color:oklch(0.93 0.005 260);text-wrap:pretty">${flag ? `<span style="font-weight:700;color:${flagFg}">${esc(flagLabel)}</span>${esc(flag.reason)}` : ''}</span>` +
+          `</div>`,
+        );
+      }
+    }
+    const fileRisk = data.files.find((f) => f.path === path);
+    const risk = RISK[fileRisk ? fileRisk.risk.overall : 'unknown'];
+    // "Risk: X" here (not risk.label) — this badge means the risk of THIS change to the file,
+    // inside a group; the file table's own badge below means the file's risk in general.
+    return (
+      `<div style="border-top:1px solid oklch(0.27 0.006 260)">` +
+      `<div style="display:flex;align-items:center;gap:14px;padding:9px 16px;background:oklch(0.19 0.006 260);border-bottom:1px solid oklch(0.25 0.006 260)">` +
+      `<span class="mono" style="font-weight:500;font-size:13px;color:oklch(0.94 0.005 260)">${esc(path)}</span>` +
+      `<span class="mono" style="font-size:12.5px;color:oklch(0.80 0.15 150)">+${adds}</span>` +
+      `<span class="mono" style="font-size:12.5px;color:oklch(0.78 0.15 25)">−${dels}</span>` +
+      `<span style="margin-left:auto;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:4px;color:${risk.fg};background:${risk.bg};border:${risk.border}">Risk: ${risk.short}</span>` +
+      `</div>` +
+      `<div class="mono" style="font-size:12.5px;line-height:20px">${lineRows.join('')}</div>` +
+      `</div>`
+    );
+  }
+
+  const chunksList = document.getElementById('chunks-list');
+  for (const c of data.chunks) {
+    const verdict = VERDICT[c.judge.verdict];
+    const card = document.createElement('div');
+    card.id = c.id;
+    card.style.cssText = 'border:1px solid oklch(0.28 0.006 260);border-radius:6px;overflow:hidden';
+
+    const findingsHtml = c.judge.findings.length
+      ? `<div style="padding:14px 16px;border-top:1px solid oklch(0.27 0.006 260);display:flex;flex-direction:column;gap:8px">` +
+        c.judge.findings.map((fd) => {
+          const sev = SEV[fd.severity] || SEV.medium;
+          const loc = `${fd.file.split('/').pop()}:${fd.line}`;
+          return `<div style="display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:baseline">` +
+            `<span style="font-size:12px;font-weight:600;color:${sev.fg}">${esc(sev.short)}</span>` +
+            `<span style="font-size:14px;line-height:1.45;color:oklch(0.94 0.005 260);text-wrap:pretty">${esc(fd.summary)}</span>` +
+            `<span class="mono" style="font-size:12.5px">${esc(loc)}</span></div>`;
+        }).join('') + `</div>`
+      : '';
+
+    const filesHtml = c.files.map((p) => renderFileDiff(c, p)).join('');
+
+    // Group risk = the highest risk among the group's own files (lowest rank number wins).
+    const groupRisk = c.files
+      .map((p) => { const f = data.files.find((x) => x.path === p); return RISK[f ? f.risk.overall : 'unknown']; })
+      .sort((a, b) => a.rank - b.rank)[0] || RISK.unknown;
+
+    card.innerHTML =
+      `<div class="chunk-header" style="display:grid;grid-template-columns:72px minmax(0,1fr) auto auto 20px;gap:16px;align-items:center;padding:14px 16px;background:oklch(0.20 0.006 260);cursor:pointer">` +
+      `<span class="mono" style="font-weight:500;font-size:12px;color:oklch(0.72 0.006 260)">${esc(c.id.replace('chunk-', 'Group '))}</span>` +
+      `<div style="min-width:0"><div style="font-size:15.5px;font-weight:600;color:oklch(0.96 0.004 260)">${esc(c.summary)}</div>` +
+      `<div class="mono" style="font-size:12.5px;color:oklch(0.72 0.006 260);margin-top:3px;overflow-wrap:anywhere">${c.files.map(esc).join('   ')}</div></div>` +
+      `<span style="font-size:13px;font-weight:600;padding:5px 11px;border-radius:4px;color:${groupRisk.fg};background:${groupRisk.bg};border:${groupRisk.border};white-space:nowrap">Risk: ${groupRisk.short}</span>` +
+      `<span style="font-size:13px;font-weight:600;padding:5px 11px;border-radius:4px;color:${verdict.fg};background:${verdict.bg};border:${verdict.border};white-space:nowrap">${verdict.label}</span>` +
+      `<span class="chunk-chevron" style="color:oklch(0.72 0.006 260);font-size:12px">▾</span>` +
+      `</div>` +
+      `<div class="chunk-body">${findingsHtml}${filesHtml}</div>`;
+
+    const header = card.querySelector('.chunk-header');
+    const body = card.querySelector('.chunk-body');
+    const chevron = card.querySelector('.chunk-chevron');
+    const startOpen = c.judge.verdict !== 'green';
+    body.style.display = startOpen ? 'block' : 'none';
+    chevron.textContent = startOpen ? '▾' : '▸';
+    header.addEventListener('click', () => {
+      const open = body.style.display === 'block';
+      body.style.display = open ? 'none' : 'block';
+      chevron.textContent = open ? '▸' : '▾';
+    });
+    chunksList.appendChild(card);
+  }
+
+  // file-row "Reviewed in" links open the target chunk before the anchor jump happens.
+  document.querySelectorAll('.jump-chunk').forEach((a) => {
+    a.addEventListener('click', () => {
+      const target = document.getElementById(a.dataset.target);
+      if (!target) return;
+      const body = target.querySelector('.chunk-body');
+      const chevron = target.querySelector('.chunk-chevron');
+      if (body && body.style.display !== 'block') {
+        body.style.display = 'block';
+        if (chevron) chevron.textContent = '▾';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
