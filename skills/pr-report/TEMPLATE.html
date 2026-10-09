@@ -13,6 +13,12 @@
   a:hover { color: oklch(0.90 0.09 240); text-decoration: underline; }
   .mono { font-family: 'IBM Plex Mono', monospace; }
   .sans { font-family: 'IBM Plex Sans', sans-serif; }
+  /* Hover-reveal popovers (risk reasons, bug/risky-spot lists, line-note detail) — pure CSS so no
+     click/hover state needs to be tracked in JS. The popover is a descendant of its own trigger,
+     so hovering into the popover keeps it open. */
+  .hov { position: relative; }
+  .hov > .hov-pop { display: none; }
+  .hov:hover > .hov-pop { display: block; }
 </style>
 </head>
 <body>
@@ -20,32 +26,34 @@
 <div style="max-width:1120px;margin:0 auto">
 <div class="sans" style="background:oklch(0.17 0.005 260);color:oklch(0.93 0.005 260);border:1px solid oklch(0.27 0.006 260);border-radius:8px;overflow:hidden">
 
-  <header id="run-header" class="mono" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:14px 32px;border-bottom:1px solid oklch(0.27 0.006 260);font-size:13px;white-space:nowrap;color:oklch(0.72 0.006 260)"></header>
-
-  <div style="padding:40px 32px 36px;border-bottom:1px solid oklch(0.27 0.006 260)">
-    <div class="mono" style="font-weight:600;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:oklch(0.72 0.006 260);margin-bottom:14px">What this branch does</div>
-    <p id="narrative" style="margin:0;font-size:17px;line-height:1.55;font-weight:500;max-width:62ch;text-wrap:pretty;color:oklch(0.96 0.004 260)"></p>
+  <div style="padding:32px 32px 34px;border-bottom:1px solid oklch(0.27 0.006 260);display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span id="branch-title" class="mono" style="font-weight:600;font-size:24px;color:oklch(0.95 0.005 260);overflow-wrap:anywhere"></span>
+      <div id="facts-line" style="display:flex;flex-wrap:wrap;gap:4px 8px;font-size:14px;color:oklch(0.72 0.006 260)"></div>
+      <div id="commits-timeline" style="display:none;flex-direction:column;padding:4px 0 0 4px"></div>
+    </div>
+    <p id="narrative" style="margin:0;font-size:20px;line-height:1.55;max-width:72ch;text-wrap:pretty;color:oklch(0.95 0.004 260)"></p>
   </div>
 
   <div style="padding:32px 32px 28px;border-bottom:1px solid oklch(0.27 0.006 260)">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
-      <h2 style="margin:0;font-size:17px;font-weight:600">Where to look first</h2>
-      <span style="font-size:13px;color:oklch(0.72 0.006 260)">Riskiest files first. Click a row for the reasons.</span>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+      <h2 style="flex:none;white-space:nowrap;margin:0;font-size:17px;font-weight:600">Files by risk</h2>
+      <span style="flex:none;white-space:nowrap;font-size:13px;color:oklch(0.72 0.006 260)">Riskiest files first. Hover a rating to see why.</span>
     </div>
-    <div style="border:1px solid oklch(0.27 0.006 260);border-radius:6px;overflow:hidden">
-      <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px 180px 28px;gap:16px;padding:9px 16px;background:oklch(0.20 0.006 260);font-size:12px;font-weight:500;color:oklch(0.72 0.006 260)">
-        <span>Risk</span><span>File</span><span>Changed before</span><span>Reviewed in</span><span></span>
+    <div style="border:1px solid oklch(0.27 0.006 260);border-radius:6px">
+      <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px 150px;gap:16px;padding:9px 16px;border-radius:6px 6px 0 0;background:oklch(0.20 0.006 260);font-size:12px;font-weight:500;color:oklch(0.72 0.006 260)">
+        <span>Risk</span><span>File</span><span>Changed before</span><span>Reviewed in</span>
       </div>
       <div id="files-list"></div>
     </div>
   </div>
 
   <div style="padding:32px 32px 36px">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
-      <h2 style="margin:0;font-size:17px;font-weight:600">The changes, grouped by what they do</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+      <h2 style="margin:0;font-size:17px;font-weight:600">Changes, grouped by purpose</h2>
       <span style="font-size:13px;color:oklch(0.72 0.006 260)">Each group can be reviewed on its own.</span>
     </div>
-    <div id="chunks-list" style="display:flex;flex-direction:column;gap:16px"></div>
+    <div id="chunks-list" style="display:flex;flex-direction:column;gap:20px"></div>
   </div>
 
 </div>
@@ -69,23 +77,18 @@ __PR_DATA__
   };
   // A line-level "low" flag deliberately does not reuse RISK.low's green: green reads as "safe to
   // ignore" on a code line, but a flag always means "look here" — no flag is the real safe signal.
-  const LINE_FLAG_LOW = { label: 'Minor risk', fg: 'oklch(0.86 0.01 260)', bar: 'oklch(0.66 0.01 260)' };
-  const VERDICT = {
-    red:    { label: 'Reviewed, critical issues', fg: RISK.high.fg,   bg: RISK.high.bg,   border: RISK.high.border },
-    yellow: { label: 'Reviewed, minor issues',    fg: RISK.medium.fg, bg: RISK.medium.bg, border: RISK.medium.border },
-    green:  { label: 'Reviewed, no issues',       fg: RISK.low.fg,    bg: RISK.low.bg,    border: RISK.low.border },
-  };
+  const LINE_FLAG_LOW = { label: 'Minor risk', fg: 'oklch(0.86 0.01 260)', bar: 'oklch(0.72 0.01 260)' };
   const SEV = {
-    high:   { short: 'Serious',     fg: RISK.high.fg },
-    medium: { short: 'Fix',         fg: RISK.medium.fg },
-    low:    { short: 'Minor',       fg: 'oklch(0.80 0.02 80)' },
+    high:   { fg: RISK.high.fg,   bar: RISK.high.bar },
+    medium: { fg: RISK.medium.fg, bar: RISK.medium.bar },
+    low:    { fg: 'oklch(0.86 0.01 260)', bar: 'oklch(0.72 0.01 260)' },
   };
-  const DIFF = {
-    add:  { bg: 'oklch(0.31 0.065 150)', fg: 'oklch(0.96 0.02 150)', sign: 'oklch(0.85 0.16 150)', num: 'oklch(0.72 0.06 150)' },
-    del:  { bg: 'oklch(0.30 0.075 25)',  fg: 'oklch(0.94 0.02 25)',  sign: 'oklch(0.82 0.15 25)',  num: 'oklch(0.72 0.06 25)' },
-    ctx:  { bg: 'transparent',           fg: 'oklch(0.76 0.008 260)', sign: 'transparent',          num: 'oklch(0.56 0.006 260)' },
-    hunk: { bg: 'oklch(0.23 0.03 250)',  fg: 'oklch(0.78 0.05 250)', sign: 'transparent',           num: 'transparent' },
+  const GRADE = {
+    low:    { word: 'Low',    fg: RISK.low.fg,    bar: RISK.low.bar,    idx: 1 },
+    medium: { word: 'Medium', fg: RISK.medium.fg, bar: RISK.medium.bar, idx: 2 },
+    high:   { word: 'High',   fg: RISK.high.fg,   bar: RISK.high.bar,   idx: 3 },
   };
+  const NEUTRAL_SEG = 'oklch(0.34 0.008 260)';
   const REASON_LABELS = [
     ['blastRadius', 'What depends on it'],
     ['complexity', 'Size of the change'],
@@ -97,6 +100,45 @@ __PR_DATA__
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   const slug = (s) => s.replace(/[^a-z0-9]+/gi, '-');
+
+  // ---- diff line backgrounds (row bg + a separately-tinted number-gutter bg per line kind) ----
+  const DIFF = {
+    add:  { bg: 'oklch(0.255 0.04 160)', numBg: 'oklch(0.34 0.07 150)', fg: 'oklch(0.94 0.01 250)', sign: 'oklch(0.94 0.01 250)', num: 'oklch(0.94 0.01 250)' },
+    del:  { bg: 'oklch(0.25 0.045 20)',  numBg: 'oklch(0.33 0.08 20)',  fg: 'oklch(0.94 0.01 250)', sign: 'oklch(0.94 0.01 250)', num: 'oklch(0.94 0.01 250)' },
+    ctx:  { bg: 'transparent',           numBg: 'transparent',          fg: 'oklch(0.94 0.01 250)', sign: 'transparent',         num: 'oklch(0.58 0.01 250)' },
+    hunk: { bg: 'oklch(0.24 0.04 255)',  numBg: 'oklch(0.28 0.06 255)',  fg: 'oklch(0.70 0.02 255)', sign: 'transparent',         num: 'transparent' },
+  };
+
+  // ---- syntax highlighting: a small inline tokenizer, not a full-file-aware parser ----
+  const SYN = { kw: 'oklch(0.72 0.15 25)', str: 'oklch(0.87 0.07 240)', num: 'oklch(0.80 0.11 240)', fn: 'oklch(0.82 0.10 300)', type: 'oklch(0.81 0.12 60)', prop: 'oklch(0.80 0.11 240)', com: 'oklch(0.66 0.015 250)' };
+  const KW = new Set('const let var function return if else try catch finally throw await async new export import from interface type class extends while for of in typeof instanceof true false null undefined void this ALTER TABLE ADD COLUMN text describe it expect'.split(' '));
+  function tokenize(s) {
+    const re = /(\/\/.*$|--.*$)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([{}()\[\];,.<>:=?!|&+\-*/]+)/g;
+    const out = [];
+    let i = 0, m;
+    while ((m = re.exec(s))) {
+      if (m.index > i) out.push({ t: s.slice(i, m.index), c: 'inherit' });
+      let c = 'inherit';
+      if (m[1]) c = SYN.com;
+      else if (m[2]) c = SYN.str;
+      else if (m[3]) c = SYN.num;
+      else if (m[4]) {
+        const w = m[4];
+        c = KW.has(w) ? SYN.kw
+          : /^[A-Z]/.test(w) ? SYN.type
+          : s[re.lastIndex] === '(' ? SYN.fn
+          : (s[m.index - 1] === '.' || /^\s*\??:/.test(s.slice(re.lastIndex))) ? SYN.prop
+          : 'inherit';
+      }
+      out.push({ t: m[0], c });
+      i = re.lastIndex;
+    }
+    if (i < s.length) out.push({ t: s.slice(i), c: 'inherit' });
+    return out.length ? out : [{ t: ' ', c: 'inherit' }];
+  }
+  function tokensHtml(tokens) {
+    return tokens.map((tk) => (tk.c === 'inherit' ? esc(tk.t) : `<span style="color:${tk.c}">${esc(tk.t)}</span>`)).join('');
+  }
 
   // ---- diff parsing: one hunk's raw unified-diff text -> line records ----
   function parseHunk(diffText) {
@@ -113,12 +155,74 @@ __PR_DATA__
     return out;
   }
 
+  // ---- hover popover for a file's four structural risk reasons, each with a 1-3 segment meter ----
+  function reasonsPopoverHtml(risk, structural, side) {
+    const rows = REASON_LABELS.map(([key, label]) => {
+      const field = structural[key];
+      const grade = GRADE[field.grade] || GRADE.low;
+      const segs = [1, 2, 3].map((i) => `<span style="width:12px;height:6px;border-radius:1px;background:${i <= grade.idx ? grade.bar : NEUTRAL_SEG}"></span>`).join('');
+      return `<span style="color:oklch(0.76 0.006 260);white-space:nowrap">${esc(label)}</span>` +
+        `<span style="display:flex;align-items:center;gap:6px"><span style="display:flex;gap:2px">${segs}</span><span style="font-weight:600;width:52px;color:${grade.fg}">${grade.word}</span></span>` +
+        `<span style="color:oklch(0.90 0.006 260);line-height:1.35">${esc(field.reason)}</span>`;
+    }).join('');
+    const pos = side === 'right' ? 'right:0' : 'left:0';
+    return `<div class="hov-pop" style="position:absolute;top:calc(100% + 8px);${pos};z-index:30;width:440px;padding:12px 14px;border-radius:8px;background:oklch(0.24 0.008 260);border:1px solid oklch(0.36 0.01 260);box-shadow:0 12px 32px oklch(0 0 0 / 0.55);font-family:'IBM Plex Sans',sans-serif;white-space:normal;cursor:default">` +
+      `<div style="font-size:13px;font-weight:600;margin-bottom:10px;color:oklch(0.95 0.005 260)">Why this file is <span style="color:${risk.fg}">${risk.label}</span></div>` +
+      `<div style="display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px 10px;align-items:center;font-size:12.5px;font-weight:400">${rows}</div>` +
+      `</div>`;
+  }
+  // Plain colored text + an info icon, not a filled badge — kept visually lighter than the Bugs/Risky
+  // spots chips on purpose, so a file's general risk doesn't read as a summary of this diff's findings.
+  function riskLabelHtml(text, risk, structural, side) {
+    return `<span class="hov" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12.5px;font-weight:600;cursor:help;color:${risk.fg}">` +
+      `<span>${esc(text)}</span>` +
+      `<span style="display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box;font:italic 700 9px/1 Georgia,serif">i</span>` +
+      reasonsPopoverHtml(risk, structural, side) +
+      `</span>`;
+  }
+
   // ---- header ----
-  document.getElementById('run-header').innerHTML =
-    `<span style="color:oklch(0.95 0.005 260);font-weight:600">${esc(data.branch)}</span>` +
-    `<span>into ${esc(data.base)}</span>` +
-    `<span>· ${data.files.length} files changed</span>` +
-    `<span>· ${data.chunks.length} groups of related changes</span>`;
+  let totalAdds = 0, totalDels = 0;
+  for (const c of data.chunks) {
+    for (const h of c.hunks) {
+      for (const l of parseHunk(h.diff)) {
+        if (l.kind === 'add') totalAdds++;
+        if (l.kind === 'del') totalDels++;
+      }
+    }
+  }
+  document.getElementById('branch-title').textContent = data.branch;
+  document.getElementById('facts-line').innerHTML =
+    `<span style="flex:none;white-space:nowrap">into <span class="mono" style="color:oklch(0.93 0.005 260)">${esc(data.base)}</span></span>` +
+    `<span style="flex:none;white-space:nowrap">·</span>` +
+    `<span style="flex:none;white-space:nowrap"><span style="color:oklch(0.93 0.005 260);font-weight:600">${data.files.length}</span> files changed</span>` +
+    `<span style="flex:none;white-space:nowrap">·</span>` +
+    `<span style="flex:none;white-space:nowrap"><span style="color:oklch(0.93 0.005 260);font-weight:600">${data.chunks.length}</span> groups</span>` +
+    `<span style="flex:none;white-space:nowrap">·</span>` +
+    `<span id="commits-toggle" style="flex:none;white-space:nowrap;display:flex;align-items:center;gap:5px;cursor:pointer;color:oklch(0.80 0.09 240)"><span style="color:oklch(0.93 0.005 260);font-weight:600">${data.commits.length}</span> commits <span id="commits-chevron" style="font-size:11px">▸</span></span>` +
+    `<span style="flex:none;white-space:nowrap">·</span>` +
+    `<span class="mono" style="flex:none;white-space:nowrap"><span style="color:oklch(0.80 0.15 150)">+${totalAdds}</span> <span style="color:oklch(0.78 0.15 25)">−${totalDels}</span></span>`;
+
+  const commitsTimeline = document.getElementById('commits-timeline');
+  commitsTimeline.innerHTML = data.commits.map((c, i) => {
+    const notLast = i < data.commits.length - 1;
+    return `<div style="display:grid;grid-template-columns:14px minmax(0,1fr);gap:14px">` +
+      `<div style="display:flex;flex-direction:column;align-items:center"><span style="width:9px;height:9px;margin-top:6px;border-radius:50%;background:oklch(0.55 0.01 260)"></span>${notLast ? '<span style="flex:1;width:1px;margin-top:3px;background:oklch(0.34 0.008 260)"></span>' : ''}</div>` +
+      `<div style="display:flex;flex-direction:column;gap:2px;min-width:0;padding-bottom:${notLast ? '14px' : '0'}">` +
+      `<span style="font-size:14px;line-height:1.45;color:oklch(0.93 0.005 260);text-wrap:pretty">${esc(c.subject)}</span>` +
+      `<span style="display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:oklch(0.72 0.006 260)">` +
+      `<span class="mono" style="flex:none;white-space:nowrap;font-weight:600;color:oklch(0.96 0.004 260)">${esc(c.sha)}</span>` +
+      `<span style="flex:none;white-space:nowrap">${esc(c.author)}</span>` +
+      `<span style="flex:none;white-space:nowrap">${esc(c.date)}</span>` +
+      `</span></div></div>`;
+  }).join('');
+  const commitsToggle = document.getElementById('commits-toggle');
+  const commitsChevron = document.getElementById('commits-chevron');
+  commitsToggle.addEventListener('click', () => {
+    const open = commitsTimeline.style.display === 'flex';
+    commitsTimeline.style.display = open ? 'none' : 'flex';
+    commitsChevron.textContent = open ? '▸' : '▾';
+  });
 
   document.getElementById('narrative').textContent = data.narrative;
 
@@ -134,88 +238,130 @@ __PR_DATA__
     const dir = slashAt >= 0 ? f.path.slice(0, slashAt + 1) : '';
     const name = slashAt >= 0 ? f.path.slice(slashAt + 1) : f.path;
     const historyText = f.historicalEdits === 0 ? 'New in this branch' : `${f.historicalEdits} times`;
+    const reviewedInHtml = touching.length
+      ? touching.map((c) => `<a href="#${c.id}" class="jump-chunk" data-target="${c.id}" style="font-size:13px;margin-right:10px;white-space:nowrap">${esc(c.id.replace('chunk-', 'Group '))}</a>`).join('')
+      : '<span style="font-size:13px;color:oklch(0.55 0.006 260)">—</span>';
 
     const row = document.createElement('div');
     row.style.borderTop = '1px solid oklch(0.25 0.006 260)';
-    const reasonsHtml = REASON_LABELS.map(([key, label]) => {
-      const text = key === 'coverageGap' ? f.risk.structural.coverageGap
-        : key === 'pathCriticality' ? f.risk.structural.pathCriticality
-        : f.risk.structural[key];
-      return `<div style="background:oklch(0.15 0.005 260);padding:12px 16px">` +
-        `<div style="font-size:12px;color:oklch(0.72 0.006 260);margin-bottom:4px">${esc(label)}</div>` +
-        `<div style="font-size:13.5px;line-height:1.45;color:oklch(0.92 0.005 260);text-wrap:pretty">${esc(text)}</div></div>`;
-    }).join('');
-    const reviewedInHtml = touching.length
-      ? touching.map((c) => `<a href="#${c.id}" class="jump-chunk" data-target="${c.id}" style="font-size:13px;margin-right:10px">${esc(c.id.replace('chunk-', 'Group '))}</a>`).join('')
-      : '<span style="font-size:13px;color:oklch(0.55 0.006 260)">—</span>';
-
     row.innerHTML =
-      `<div class="file-row" style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px 180px 28px;gap:16px;align-items:center;padding:10px 16px;cursor:pointer">` +
-      `<span style="justify-self:start;font-size:12px;font-weight:600;padding:3px 9px;border-radius:4px;color:${risk.fg};background:${risk.bg};border:${risk.border}">${risk.label}</span>` +
+      `<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px 150px;gap:16px;align-items:center;padding:10px 16px">` +
+      `<span style="justify-self:start">${riskLabelHtml(risk.label, risk, f.risk.structural, 'left')}</span>` +
       `<span class="mono" style="font-size:13.5px;overflow-wrap:anywhere"><span style="color:oklch(0.70 0.006 260)">${esc(dir)}</span><span style="color:oklch(0.96 0.004 260);font-weight:500">${esc(name)}</span></span>` +
       `<span style="font-size:13px;color:oklch(0.78 0.006 260)">${esc(historyText)}</span>` +
       `<span>${reviewedInHtml}</span>` +
-      `<span class="chevron" style="color:oklch(0.72 0.006 260);font-size:12px;text-align:center">▸</span>` +
-      `</div>` +
-      `<div class="file-detail" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:oklch(0.25 0.006 260);border-top:1px solid oklch(0.25 0.006 260)">${reasonsHtml}</div>`;
-
-    const header = row.querySelector('.file-row');
-    const detail = row.querySelector('.file-detail');
-    const chevron = row.querySelector('.chevron');
-    header.addEventListener('click', () => {
-      const open = detail.style.display === 'grid';
-      detail.style.display = open ? 'none' : 'grid';
-      chevron.textContent = open ? '▸' : '▾';
-      header.style.background = open ? 'transparent' : 'oklch(0.21 0.006 260)';
-    });
+      `</div>`;
     filesList.appendChild(row);
   }
 
+  // ---- bug / risky-spot marker styling ----
+  function bugMark(finding) {
+    const sev = SEV[finding.severity] || SEV.medium;
+    return { label: 'Bug', fg: sev.fg, badgeBg: sev.bar, badgeBorder: 'none', badgeFg: '#111', reason: finding.summary };
+  }
+  function riskMark(flag) {
+    const r = flag.risk === 'low' ? LINE_FLAG_LOW : RISK[flag.risk];
+    return { label: r.label, fg: r.fg, badgeBg: 'transparent', badgeBorder: `2px solid ${r.bar}`, badgeFg: r.fg, reason: flag.reason };
+  }
+  function markHtml(mark) {
+    const popover = `<div class="hov-pop" style="position:absolute;z-index:30;top:calc(100% + 6px);left:-8px;width:360px;padding:10px 12px;border-radius:8px;background:oklch(0.24 0.008 260);border:1px solid oklch(0.36 0.01 260);box-shadow:0 12px 32px oklch(0 0 0 / 0.55);font-family:'IBM Plex Sans',sans-serif;white-space:normal;text-align:left;cursor:default">` +
+      `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px"><span style="font-size:12.5px;font-weight:600;color:${mark.fg}">${esc(mark.label)}</span><span class="mono" style="font-size:12px;color:oklch(0.76 0.006 260)">line ${mark.line}</span></div>` +
+      `<div style="font-size:13px;line-height:1.45;color:oklch(0.92 0.005 260);text-wrap:pretty">${esc(mark.reason)}</div>` +
+      `</div>`;
+    return `<span class="hov" style="display:flex;cursor:help">` +
+      `<span style="display:flex;align-items:center;justify-content:center;width:17px;height:17px;box-sizing:border-box;border-radius:50%;background:${mark.badgeBg};border:${mark.badgeBorder};color:${mark.badgeFg};font-size:11px;font-weight:700">${mark.num}</span>` +
+      popover +
+      `</span>`;
+  }
+
+  // ---- "Bugs" / "Risky spots" group-header chips ----
+  function sevWord(kind, level) {
+    const BUG = { high: 'Critical', medium: 'Moderate', low: 'Minor' };
+    const SPOT = { high: 'High', medium: 'Medium', low: 'Low' };
+    return (kind === 'bug' ? BUG : SPOT)[level];
+  }
+  function chipData(items, kind, chunkId) {
+    const ORDER = ['high', 'medium', 'low'];
+    const sorted = [...items].sort((a, b) => ORDER.indexOf(a.lv) - ORDER.indexOf(b.lv));
+    const worst = sorted[0] && sorted[0].lv;
+    const tier = worst ? RISK[worst] : RISK.low;
+    const ring = kind !== 'bug';
+    const label = sorted.length ? (kind === 'bug' ? 'Bugs' : 'Risky spots') : (kind === 'bug' ? 'No bugs' : 'No risky spots');
+    return {
+      label, fg: tier.fg, bg: tier.bg, border: tier.border, chunkId,
+      emptyText: kind === 'bug' ? 'No bugs found in this group.' : 'No risky spots in this group.',
+      items: sorted.map((x) => {
+        const sev = SEV[x.lv];
+        return { word: sevWord(kind, x.lv), fg: sev.fg, dotBg: ring ? 'transparent' : sev.bar, dotBorder: ring ? `2px solid ${sev.bar}` : 'none', text: x.text, loc: `${x.file.split('/').pop()}:${x.line}`, anchor: x.anchor };
+      }),
+    };
+  }
+  function chipHtml(d) {
+    const itemsHtml = d.items.length
+      ? d.items.map((it) =>
+          `<div style="display:grid;grid-template-columns:12px 76px minmax(0,1fr);gap:8px;align-items:start;font-size:12.5px;line-height:1.4">` +
+          `<span style="display:flex;align-items:center;height:17px"><span style="flex:none;width:10px;height:10px;box-sizing:border-box;border-radius:50%;background:${it.dotBg};border:${it.dotBorder}"></span></span>` +
+          `<span style="font-weight:600;color:${it.fg}">${esc(it.word)}</span>` +
+          `<span><span style="color:oklch(0.92 0.005 260)">${esc(it.text)}</span> <a href="#${it.anchor}" class="jump-chunk mono" data-target="${d.chunkId}" style="font-size:11.5px;white-space:nowrap">${esc(it.loc)}</a></span>` +
+          `</div>`,
+        ).join('')
+      : `<div style="font-size:13px;font-weight:600;color:${RISK.low.fg}">${esc(d.emptyText)}</div>`;
+    return `<span class="hov" style="display:inline-flex;cursor:help">` +
+      `<span style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 11px;border-radius:4px;white-space:nowrap;color:${d.fg};background:${d.bg};border:${d.border}">` +
+      `<span>${esc(d.label)}</span>` +
+      `<span style="display:flex;align-items:center;justify-content:center;width:14px;height:14px;margin-left:2px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box;font:italic 700 9px/1 Georgia,serif;opacity:0.85">i</span>` +
+      `</span>` +
+      `<div class="hov-pop" style="position:absolute;top:calc(100% + 8px);right:0;z-index:30;width:440px;padding:12px 14px;border-radius:8px;background:oklch(0.24 0.008 260);border:1px solid oklch(0.36 0.01 260);box-shadow:0 12px 32px oklch(0 0 0 / 0.55);text-align:left;white-space:normal;cursor:default">` +
+      `<div style="display:flex;flex-direction:column;gap:9px">${itemsHtml}</div>` +
+      `</div>` +
+      `</span>`;
+  }
+
   // ---- chunks ----
-  function renderFileDiff(chunk, path) {
+  function renderFileDiff(chunk, path, isFirst) {
     const hunksForPath = chunk.hunks.filter((h) => h.file === path);
+    const findings = chunk.judge.findings.filter((fd) => fd.file === path);
     const flags = chunk.riskPerLine.filter((r) => r.file === path);
     let adds = 0, dels = 0;
     const lineRows = [];
+    let markNum = 0;
     for (const h of hunksForPath) {
       for (const l of parseHunk(h.diff)) {
         if (l.kind === 'add') adds++;
         if (l.kind === 'del') dels++;
         const d = DIFF[l.kind];
-        const flag = (l.kind === 'add' || l.kind === 'ctx') ? flags.find((fl) => fl.line === l.newNo) : null;
         const sign = l.kind === 'add' ? '+' : l.kind === 'del' ? '−' : '';
-        // Low-risk flags get a neutral treatment, not green — see LINE_FLAG_LOW above.
-        const flagTokens = flag ? (flag.risk === 'low' ? LINE_FLAG_LOW : RISK[flag.risk]) : null;
-        const noteBg = flag
-          ? (flag.risk === 'low' ? 'oklch(0.22 0.006 260)' : `oklch(0.21 0.02 ${flag.risk === 'high' ? 25 : 80})`)
-          : 'oklch(0.155 0.005 260)';
-        const notePad = flag ? '2px 10px 3px' : '0';
-        const flagFg = flag ? flagTokens.fg : 'transparent';
-        const flagLabel = flag ? `${flagTokens.label} · ` : '';
-        const markBg = flag ? flagTokens.bar : 'transparent';
+        const marks = [];
+        if (l.kind !== 'del' && l.kind !== 'hunk') {
+          findings.filter((fd) => fd.line === l.newNo).forEach((fd) => marks.push(bugMark(fd)));
+          flags.filter((fl) => fl.line === l.newNo).forEach((fl) => marks.push(riskMark(fl)));
+        }
+        const marksHtml = marks.map((m) => {
+          markNum += 1;
+          return markHtml({ ...m, num: markNum, line: l.newNo });
+        }).join('');
+        const lineId = `ln-${chunk.id}-${slug(path)}-${l.newNo != null ? l.newNo : 'o' + l.oldNo}`;
         lineRows.push(
-          `<div style="display:grid;grid-template-columns:44px 44px 5px 20px minmax(0,1fr) 290px;background:${d.bg}">` +
-          `<span style="text-align:right;padding-right:8px;color:${d.num};user-select:none">${l.kind === 'hunk' ? '' : (l.oldNo ?? '')}</span>` +
-          `<span style="text-align:right;padding-right:8px;color:${d.num};user-select:none">${l.kind === 'hunk' ? '' : (l.newNo ?? '')}</span>` +
-          `<span style="background:${markBg}"></span>` +
-          `<span style="text-align:center;color:${d.sign};font-weight:600;user-select:none">${sign}</span>` +
-          `<span style="white-space:pre-wrap;overflow-wrap:anywhere;padding-right:12px;color:${d.fg}">${esc(l.text)}</span>` +
-          `<span class="sans" style="font-size:12px;line-height:17px;padding:${notePad};background:${noteBg};border-left:1px solid oklch(0.27 0.006 260);color:oklch(0.93 0.005 260);text-wrap:pretty">${flag ? `<span style="font-weight:700;color:${flagFg}">${esc(flagLabel)}</span>${esc(flag.reason)}` : ''}</span>` +
+          `<div id="${lineId}" style="display:grid;grid-template-columns:44px 44px 42px 16px minmax(0,1fr);background:${d.bg}">` +
+          `<span style="text-align:right;padding-right:10px;color:${d.num};background:${d.numBg};user-select:none">${l.kind === 'hunk' ? '' : (l.oldNo ?? '')}</span>` +
+          `<span style="text-align:right;padding-right:10px;color:${d.num};background:${d.numBg};user-select:none">${l.kind === 'hunk' ? '' : (l.newNo ?? '')}</span>` +
+          `<span style="display:flex;align-items:center;justify-content:center;gap:2px;user-select:none">${marksHtml}</span>` +
+          `<span style="color:${d.sign};font-weight:600;user-select:none">${sign}</span>` +
+          `<span style="white-space:pre-wrap;overflow-wrap:anywhere;padding-right:12px;color:${d.fg}">${l.kind === 'hunk' ? esc(l.text) : tokensHtml(tokenize(l.text))}</span>` +
           `</div>`,
         );
       }
     }
     const fileRisk = data.files.find((f) => f.path === path);
     const risk = RISK[fileRisk ? fileRisk.risk.overall : 'unknown'];
-    // "Risk: X" here (not risk.label) — this badge means the risk of THIS change to the file,
-    // inside a group; the file table's own badge below means the file's risk in general.
+    const headRadius = isFirst ? '6px 6px 0 0' : '0';
     return (
-      `<div style="border-top:1px solid oklch(0.27 0.006 260)">` +
-      `<div style="display:flex;align-items:center;gap:14px;padding:9px 16px;background:oklch(0.19 0.006 260);border-bottom:1px solid oklch(0.25 0.006 260)">` +
-      `<span class="mono" style="font-weight:500;font-size:13px;color:oklch(0.94 0.005 260)">${esc(path)}</span>` +
-      `<span class="mono" style="font-size:12.5px;color:oklch(0.80 0.15 150)">+${adds}</span>` +
-      `<span class="mono" style="font-size:12.5px;color:oklch(0.78 0.15 25)">−${dels}</span>` +
-      `<span style="margin-left:auto;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:4px;color:${risk.fg};background:${risk.bg};border:${risk.border}">Risk: ${risk.short}</span>` +
+      `<div style="border-top:${isFirst ? 'none' : '1px solid oklch(0.27 0.006 260)'}">` +
+      `<div style="display:flex;align-items:center;gap:14px;padding:9px 16px;background:oklch(0.19 0.006 260);border-bottom:1px solid oklch(0.25 0.006 260);border-radius:${headRadius}">` +
+      `<span class="mono" style="flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;font-size:13px;color:oklch(0.94 0.005 260)">${esc(path)}</span>` +
+      `<span class="mono" style="flex:none;font-size:12.5px;color:oklch(0.80 0.15 150)">+${adds}</span>` +
+      `<span class="mono" style="flex:none;font-size:12.5px;color:oklch(0.78 0.15 25)">−${dels}</span>` +
+      `<span style="margin-left:auto;flex:none">${fileRisk ? riskLabelHtml(`Risk: ${risk.short}`, risk, fileRisk.risk.structural, 'right') : `<span style="font-size:12.5px;font-weight:600;color:${risk.fg}">Risk: ${risk.short}</span>`}</span>` +
       `</div>` +
       `<div class="mono" style="font-size:12.5px;line-height:20px">${lineRows.join('')}</div>` +
       `</div>`
@@ -224,40 +370,28 @@ __PR_DATA__
 
   const chunksList = document.getElementById('chunks-list');
   for (const c of data.chunks) {
-    const verdict = VERDICT[c.judge.verdict];
     const card = document.createElement('div');
     card.id = c.id;
-    card.style.cssText = 'border:1px solid oklch(0.28 0.006 260);border-radius:6px;overflow:hidden';
+    card.style.cssText = 'background:oklch(0.215 0.007 260);border:1px solid oklch(0.32 0.008 260);border-radius:10px;padding:4px 10px 10px';
 
-    const findingsHtml = c.judge.findings.length
-      ? `<div style="padding:14px 16px;border-top:1px solid oklch(0.27 0.006 260);display:flex;flex-direction:column;gap:8px">` +
-        c.judge.findings.map((fd) => {
-          const sev = SEV[fd.severity] || SEV.medium;
-          const loc = `${fd.file.split('/').pop()}:${fd.line}`;
-          return `<div style="display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:baseline">` +
-            `<span style="font-size:12px;font-weight:600;color:${sev.fg}">${esc(sev.short)}</span>` +
-            `<span style="font-size:14px;line-height:1.45;color:oklch(0.94 0.005 260);text-wrap:pretty">${esc(fd.summary)}</span>` +
-            `<span class="mono" style="font-size:12.5px">${esc(loc)}</span></div>`;
-        }).join('') + `</div>`
-      : '';
-
-    const filesHtml = c.files.map((p) => renderFileDiff(c, p)).join('');
-
-    // Group risk = the highest risk among the group's own files (lowest rank number wins).
-    const groupRisk = c.files
-      .map((p) => { const f = data.files.find((x) => x.path === p); return RISK[f ? f.risk.overall : 'unknown']; })
-      .sort((a, b) => a.rank - b.rank)[0] || RISK.unknown;
+    const bugItems = c.judge.findings.map((fd) => ({ lv: fd.severity, text: fd.summary, file: fd.file, line: fd.line, anchor: `ln-${c.id}-${slug(fd.file)}-${fd.line}` }));
+    const spotItems = c.riskPerLine.map((fl) => ({ lv: fl.risk, text: fl.reason, file: fl.file, line: fl.line, anchor: `ln-${c.id}-${slug(fl.file)}-${fl.line}` }));
+    const bugsChip = chipHtml(chipData(bugItems, 'bug', c.id));
+    const spotsChip = chipHtml(chipData(spotItems, 'spot', c.id));
+    const filesHtml = c.files.map((p, i) => renderFileDiff(c, p, i === 0)).join('');
 
     card.innerHTML =
-      `<div class="chunk-header" style="display:grid;grid-template-columns:72px minmax(0,1fr) auto auto 20px;gap:16px;align-items:center;padding:14px 16px;background:oklch(0.20 0.006 260);cursor:pointer">` +
-      `<span class="mono" style="font-weight:500;font-size:12px;color:oklch(0.72 0.006 260)">${esc(c.id.replace('chunk-', 'Group '))}</span>` +
+      `<div class="chunk-header" style="display:grid;grid-template-columns:56px minmax(0,1fr) auto 20px;gap:16px;align-items:center;padding:12px 6px;cursor:pointer">` +
+      `<span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1">` +
+      `<span class="sans" style="font-weight:600;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:oklch(0.76 0.006 260);margin-bottom:4px">Group</span>` +
+      `<span class="mono" style="font-weight:600;font-size:30px;color:oklch(0.96 0.004 260)">${esc(c.id.replace('chunk-', ''))}</span>` +
+      `</span>` +
       `<div style="min-width:0"><div style="font-size:15.5px;font-weight:600;color:oklch(0.96 0.004 260)">${esc(c.summary)}</div>` +
       `<div class="mono" style="font-size:12.5px;color:oklch(0.72 0.006 260);margin-top:3px;overflow-wrap:anywhere">${c.files.map(esc).join('   ')}</div></div>` +
-      `<span style="font-size:13px;font-weight:600;padding:5px 11px;border-radius:4px;color:${groupRisk.fg};background:${groupRisk.bg};border:${groupRisk.border};white-space:nowrap">Risk: ${groupRisk.short}</span>` +
-      `<span style="font-size:13px;font-weight:600;padding:5px 11px;border-radius:4px;color:${verdict.fg};background:${verdict.bg};border:${verdict.border};white-space:nowrap">${verdict.label}</span>` +
+      `<div style="display:flex;gap:8px">${bugsChip}${spotsChip}</div>` +
       `<span class="chunk-chevron" style="color:oklch(0.72 0.006 260);font-size:12px">▾</span>` +
       `</div>` +
-      `<div class="chunk-body">${findingsHtml}${filesHtml}</div>`;
+      `<div class="chunk-body" style="margin-top:4px;border:1px solid oklch(0.28 0.006 260);border-radius:6px;background:oklch(0.17 0.005 260)">${filesHtml}</div>`;
 
     const header = card.querySelector('.chunk-header');
     const body = card.querySelector('.chunk-body');
@@ -265,7 +399,8 @@ __PR_DATA__
     const startOpen = c.judge.verdict !== 'green';
     body.style.display = startOpen ? 'block' : 'none';
     chevron.textContent = startOpen ? '▾' : '▸';
-    header.addEventListener('click', () => {
+    header.addEventListener('click', (e) => {
+      if (e.target.closest('.hov')) return; // don't toggle the group when a hover chip is clicked
       const open = body.style.display === 'block';
       body.style.display = open ? 'none' : 'block';
       chevron.textContent = open ? '▸' : '▾';

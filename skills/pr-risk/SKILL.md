@@ -60,7 +60,12 @@ Assemble and print one JSON object, fenced in a ```json block, matching this sha
       "path": "...", "historicalEdits": 0,
       "risk": {
         "overall": "high|medium|low|unknown",
-        "structural": { "blastRadius": "...", "complexity": "...", "coverageGap": "...", "pathCriticality": "..." },
+        "structural": {
+          "blastRadius": { "grade": "high|medium|low", "reason": "..." },
+          "complexity": { "grade": "high|medium|low", "reason": "..." },
+          "coverageGap": { "grade": "high|medium|low", "reason": "..." },
+          "pathCriticality": { "grade": "high|medium|low", "reason": "..." }
+        },
         "historical": { "status": "scored|insufficient-history", "churn": "..." }
       }
     }
@@ -79,7 +84,7 @@ Assemble and print one JSON object, fenced in a ```json block, matching this sha
 }
 ```
 
-`hunks[].diff` is the **raw unified-diff text** for that hunk, verbatim from `git diff`'s own hunk header (`@@ ... @@`) through its last context/added/removed line — not a paraphrase, not just the line range. This is the actual content a reviewer reads; everything else in the chunk (risk, findings) annotates it, never replaces it. `riskPerLine[].line` is the line number in the **new** file (the right-hand side of the hunk header, `+c,d`), since that's what the rendered diff numbers against.
+`hunks[].diff` is the **raw unified-diff text** for that hunk, verbatim from `git diff`'s own hunk header (`@@ ... @@`) through its last context/added/removed line — not a paraphrase, not just the line range. This is the actual content a reviewer reads; everything else in the chunk (risk, findings) annotates it, never replaces it. `riskPerLine[].line` and `findings[].line` are both the line number in the **new** file (the right-hand side of the hunk header, `+c,d`), since that's what the rendered diff numbers against — a finding can only point at an added or unchanged line, never a removed one.
 
 Follow it with a one-line tally: chunks, files, files tagged `insufficient-history`, and the Judge verdict counts (red/yellow/green).
 

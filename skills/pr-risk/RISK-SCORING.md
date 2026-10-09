@@ -11,7 +11,7 @@ No git history needed, so this runs identically on a brand-new repo and a ten-ye
 - **Patch-coverage gap**: whether the changed lines are exercised by any test in the repo's existing test suite — read the matching test file (if findable) and check whether it calls the changed code path. Approximate; don't require a coverage tool to be installed. State the verdict as a positive sentence either way — never lead with "none" or "n/a" and a dash. "Covered: 10 new Plan.test.ts cases exercise add/remove/replace/gating/duplicate-name" and "Not covered: no test in this diff or the existing suite calls `refreshSession` with an expired token" are both unambiguous on their own; "none — 10 new cases cover ..." reads, out of context, as "no tests," the opposite of what it means.
 - **Path-based criticality**: does the path match an auth/payment/migration/deploy/infra pattern (e.g. `auth/`, `payment`, `migration`, `deploy`, `*.sql`, `Dockerfile`, CI config)? This is a bespoke heuristic, not an industry-standard list — state the pattern matched when it fires.
 
-Score each as `high`/`medium`/`low` with the reason; don't collapse these four into one number yet.
+Score each as `high`/`medium`/`low` with the reason; don't collapse these four into one number yet. Report the grade and the reason as two separate fields (`grade`, `reason`), never combined into one sentence like "high — the central reconciliation engine...": the rendered report shows the grade as its own 3-step meter and the reason as its own text beside it, so a blended string can't be split back apart.
 
 ## 2. Historical layer — gated, never defaulted
 
