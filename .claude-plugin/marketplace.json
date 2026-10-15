@@ -1,0 +1,13 @@
+{
+  "name": "joachimwedin",
+  "owner": {
+    "name": "Joachim Wedin"
+  },
+  "plugins": [
+    {
+      "name": "agent-skills",
+      "source": ".",
+      "description": "Joachim Wedin's collection of agent skills: planning, specs, TDD, code review and design guidance."
+    }
+  ]
+}

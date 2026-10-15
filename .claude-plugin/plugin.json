@@ -1,0 +1,7 @@
+{
+  "name": "agent-skills",
+  "description": "Joachim Wedin's collection of agent skills: planning, specs, TDD, code review and design guidance.",
+  "author": {
+    "name": "Joachim Wedin"
+  }
+}
