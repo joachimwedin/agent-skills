@@ -230,9 +230,7 @@ candidates' dark blocks too — only `accent`/`accent-foreground` differs.
 not just read as CSS. All three candidates must appear in the finished
 report — not only the recommended one:
 
-1. Read the template at `report-template.html`, co-located with this file
-   (find this skill's own directory — it ships with Claude Code's skill
-   system, typically under `~/.claude/skills/brand-palette/`). Don't
+1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/brand-palette/report-template.html`. Don't
    redesign or restyle it: it already carries a complete visual system for
    three side-by-side candidates (fonts, layout, swatch rendering, code
    blocks with copy buttons), Tailwind's real reference scales, and a fixed
