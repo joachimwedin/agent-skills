@@ -1,3 +1,0 @@
-interface:
-  display_name: "Conventions Report"
-  short_description: "Read-only check of a repo against its stated conventions, with an HTML report"

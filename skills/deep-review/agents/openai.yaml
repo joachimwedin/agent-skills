@@ -1,3 +1,0 @@
-interface:
-  display_name: "Deep Review"
-  short_description: "Deep review of a change set against the project's conventions, correctness, tests and design"

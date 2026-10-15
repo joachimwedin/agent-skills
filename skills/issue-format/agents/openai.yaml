@@ -1,3 +1,0 @@
-interface:
-  display_name: "Issue Format"
-  short_description: "The format for an issue: Why, Do, Done when checklist, dependencies"

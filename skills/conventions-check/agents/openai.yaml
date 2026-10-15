@@ -1,3 +1,0 @@
-interface:
-  display_name: "Conventions Check"
-  short_description: "Read-only check of a repo or diff against its stated conventions, reporting violations as structured findings"
