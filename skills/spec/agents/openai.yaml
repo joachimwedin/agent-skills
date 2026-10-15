@@ -1,0 +1,3 @@
+interface:
+  display_name: "Spec"
+  short_description: "What goes into a spec an agent can implement from"

@@ -1,3 +1,0 @@
-interface:
-  display_name: "Spec Review"
-  short_description: "Whole-branch deep-review plus a Spec check that closes out a Spec"

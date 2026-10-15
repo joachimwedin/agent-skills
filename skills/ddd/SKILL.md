@@ -7,7 +7,7 @@ description: Domain-driven design patterns. Use when designing, placing or revie
 
 Model the business in the domain layer; every other layer serves it.
 
-Pair with `domain-modeling` (the glossary, `CONTEXT.md`) and `codebase-design` (module depth and seams).
+Pair with `codebase-design` (module depth and seams).
 
 ## What DDD is
 
