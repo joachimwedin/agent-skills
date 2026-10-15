@@ -26,4 +26,4 @@ Write these, in order.
 
 ## Where it goes
 
-Write to the agent vault when `/Users/joachim-daisy/agent-vault/vault` exists, following the vault's own `CLAUDE.md`. Otherwise write `<slug>-spec.md` in `$TMPDIR` (or `/tmp`). Say the full path in the reply.
+Write to the agent vault when `/Users/joachim-daisy/agent-vault/vault` exists: `projects/<name>/specs/YYYY-MM-DD-topic.md`, starting from `templates/spec.md` and following the vault's own `CLAUDE.md`. Otherwise write `<slug>-spec.md` in `$TMPDIR` (or `/tmp`). Say the full path in the reply.

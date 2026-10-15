@@ -4,6 +4,8 @@
 
 - `projects/<name>/handoffs/` — notes for the next session about unfinished work. `<name>` is the repo name.
 - `projects/<name>/research/` — working notes from lookups and comparisons. Expires after 7 days.
+- `projects/<name>/plans/` — the current plan for a project: goal, constraints, assumptions, sequence, decisions. Long-lived. `<name>` is the repo name, or the project's kebab-case name when it has no repo.
+- `projects/<name>/specs/` — what to build and how to verify it, written so an agent can implement it from a fresh session. Expires 30 days after `updated`.
 - `reference/` — stable, maintained how-tos and cheat sheets.
 - `scratch/` — anything you can't place. Not authoritative.
 - `templates/` — copy from here for new docs. Don't edit.
@@ -36,6 +38,23 @@ What a project is and how to work in it belongs in that repo's `CLAUDE.md`, not 
 - One live handoff per piece of work. Update it instead of adding another.
 - When you pick up a handoff and finish the work, delete it.
 - Check the named branch or commit before you follow a handoff. If it no longer matches, ignore it.
+
+## Plans
+
+- Name: `YYYY-MM-DD-topic.md`. Start from `templates/plan.md`.
+- Front matter adds `status` (`draft`, `active` or `superseded`), `size` and `updated`.
+- One live plan per project. Update it in place, review log included. When a new plan replaces it, delete the old one.
+- Plans don't expire. Read one only when the task names the project or the user asks.
+- Link the plan from a handoff while work on it is underway.
+
+## Specs
+
+- Name: `YYYY-MM-DD-topic.md`. Start from `templates/spec.md`.
+- Front matter adds `status` (`draft`, `approved`, `implemented` or `superseded`) and `updated: YYYY-MM-DD`.
+- Update a live spec in place and bump `updated`. When a new spec replaces it, delete the old one.
+- A spec whose `updated` date is more than 30 days old is stale. Ignore it: don't read, cite or build on it.
+- Never bump `updated` on a stale spec without re-reading the spec against the code.
+- Read a spec only when the task names it or the user asks.
 
 ## Reference
 
