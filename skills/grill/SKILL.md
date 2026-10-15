@@ -29,4 +29,4 @@ Finding _facts_ is your job, never the user's. When a frontier question needs a 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed.
 
 1. Summarize the settled tree and the assumptions, and ask the user to confirm with `AskUserQuestion`.
-2. After the user confirms, write the spec following the `spec` skill.
+2. After the user confirms, run the `to-spec` skill to write the spec.

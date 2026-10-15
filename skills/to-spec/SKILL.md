@@ -1,9 +1,18 @@
 ---
-name: spec
-description: What goes into a spec that a coding agent implements from in a fresh session, and where it is written. Use when writing, editing or reviewing a spec, or when another skill needs the spec format.
+name: to-spec
+description: Turn the current conversation into a spec that a coding agent implements from in a fresh session, asking about anything the conversation doesn't answer. Use when the user wants the discussion written up as a spec, or after a grill session is confirmed.
 ---
 
+Turn this conversation into a spec. The source is the conversation, or the topic or path the user passed. Every claim in the spec comes from what the user said or from something you verified in the repo. Nothing is invented.
+
 A spec is **self-contained**: the implementing agent starts with clean context and cannot ask anything. Every answer it needs is in the document. Length is free; ambiguity is not.
+
+## Process
+
+1. **Draft from the conversation.** Fill each section below with what is established. Verify every file, interface and pattern you name.
+2. **List the gaps.** A gap is anything a section needs that the conversation doesn't answer. Ask the user about all of them in one numbered list in chat, grouped by section. Write no file until they reply. Questions that depend on another answer go in a second list.
+3. **Handle unanswered gaps.** A gap the user skips or can't answer is written as `[NEEDS CLARIFICATION]`, marked blocking or non-blocking. Never fill it with a guess.
+4. **Write it** where it goes (below), and say the full path. Name every blocking gap in the reply.
 
 ## Sections
 
@@ -26,4 +35,6 @@ Write these, in order.
 
 ## Where it goes
 
-Write to the agent vault when `/Users/joachim-daisy/agent-vault/vault` exists: `projects/<name>/specs/YYYY-MM-DD-topic.md`, starting from `templates/spec.md` and following the vault's own `CLAUDE.md`. Otherwise write `<slug>-spec.md` in `$TMPDIR` (or `/tmp`). Say the full path in the reply.
+Find the agent vault: the path your CLAUDE.md gives for it, otherwise `~/agent-vault/vault` if that exists. If there is one, read its `CLAUDE.md` and write the spec where and how that file says. The vault decides the location, filename, template and front matter.
+
+With no vault, write `<slug>-spec.md` in `$TMPDIR` (or `/tmp`).

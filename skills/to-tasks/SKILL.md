@@ -1,5 +1,5 @@
 ---
-name: tasks
+name: to-tasks
 description: Turn a spec into a task list in the current session, as vertical slices that each declare the tasks blocking them. Use when the user has a spec and wants it broken into tasks.
 ---
 
