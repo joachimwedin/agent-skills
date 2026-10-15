@@ -1,17 +1,32 @@
 # agent-skills
 
-Personal collection of Claude Code skills. Symlinked into `~/.claude/skills`.
+Personal collection of Claude Code skills, packaged as a plugin (`agent-skills`) in a marketplace (`joachimwedin`).
 
-## Layout
+## Install
 
-Each skill lives under `skills/<name>/`. Running `link.sh` uses [GNU Stow](https://www.gnu.org/software/stow/) to symlink every skill in `skills/` into `~/.claude/skills/<name>`, and never touches anything else already there (a real directory, or a symlink from elsewhere).
+```
+/plugin marketplace add joachimwedin/agent-skills
+/plugin install agent-skills@joachimwedin
+```
+
+Each Claude Code config dir has its own plugin state. For a non-default config dir, run the install with `CLAUDE_CONFIG_DIR=<dir>`.
 
 ## Usage
 
-Run `./link.sh` after cloning or pulling:
+`/agent-skills:<skill>` always works. Bare `/<skill>` also works when no other skill or command has the name.
 
-- Adds a symlink for every skill currently under `skills/`.
-- Prunes symlinks for skills that have since been deleted or renamed, asking before each removal.
+## Updating
+
+```
+/plugin marketplace update joachimwedin
+claude plugin update agent-skills@joachimwedin
+```
+
+Third-party marketplaces don't auto-update by default; turn it on under `/plugin` -> Marketplaces. There is no `version` field, so every commit is an update.
+
+## Layout
+
+Skills live under `skills/<name>/`. The manifests are in `.claude-plugin/`.
 
 ## License
 
