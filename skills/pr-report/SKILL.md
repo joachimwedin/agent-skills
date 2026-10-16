@@ -12,9 +12,9 @@ Takes exactly one argument: a branch name. Stop and ask for one if it's missing;
 
 ## 1. Gather
 
-Run `pr-walkthrough` (`${CLAUDE_PLUGIN_ROOT}/skills/pr-walkthrough/SKILL.md`) in full, exactly as written, on the same branch — take its narrative text and its commit-list JSON exactly as printed.
+Run the `pr-walkthrough` skill in full, exactly as written, on the same branch — take its narrative text and its commit-list JSON exactly as printed.
 
-Run `pr-risk` (`${CLAUDE_PLUGIN_ROOT}/skills/pr-risk/SKILL.md`) in full, exactly as written, on the same branch — take its JSON object exactly as printed. Don't recompute or re-derive any risk score, chunk boundary, or Judge verdict; this skill only presents what those two already produced.
+Run the `pr-risk` skill in full, exactly as written, on the same branch — take its JSON object exactly as printed. Don't recompute or re-derive any risk score, chunk boundary, or Judge verdict; this skill only presents what those two already produced.
 
 Done when: both have been run and both outputs are in hand.
 

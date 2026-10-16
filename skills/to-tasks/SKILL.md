@@ -13,4 +13,4 @@ Each task carries:
 
 - **A pointer to the spec file**: its full path.
 - **A complete description of the vertical slice** it builds: the end-to-end behaviour across every layer, enough that an agent reading only this task and the spec can build it.
-- **An instruction to read `${CLAUDE_PLUGIN_ROOT}/skills/implement/SKILL.md` and follow it as written**, so whichever agent picks the task up does the work the way that file prescribes.
+- **An instruction to use the `implement` skill and follow it as written**, so whichever agent picks the task up does the work the way that skill prescribes.
